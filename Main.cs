@@ -17,9 +17,7 @@ namespace glomp
 			errorMsg = errorMsg + args.ExceptionObject.ToString() + "\n";
 			MessageBox.Show(errorMsg, "Glib error error {0}", MessageBoxButtons.AbortRetryIgnore,
 				MessageBoxIcon.Stop);
-
-
-			//Debug.WriteLine("Glib error error {0}", args.ExceptionObject.ToString());
+			Console.WriteLine(errorMsg);
 			args.ExitApplication = false;
 		}
 
@@ -32,7 +30,7 @@ namespace glomp
 			Gtk.Application.Init ();
             MainWindow win = new MainWindow ();
             win.Show ();
-			Console.WriteLine("AAAAA");
+
 			Gtk.Application.Run ();
         }
     }
