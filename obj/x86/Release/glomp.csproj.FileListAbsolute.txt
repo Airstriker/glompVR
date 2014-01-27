@@ -3,3 +3,8 @@ F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\bin\Release\glomp
 F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\bin\Release\OpenTK.dll
 F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\obj\x86\Release\ResolveAssemblyReference.cache
 F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\obj\x86\Release\glomp.exe
+C:\IDE\teodozjan\glompVR.git\bin\Release\glomp.config
+C:\IDE\teodozjan\glompVR.git\bin\Release\glomp.exe
+C:\IDE\teodozjan\glompVR.git\bin\Release\OpenTK.dll
+C:\IDE\teodozjan\glompVR.git\obj\x86\Release\ResolveAssemblyReference.cache
+C:\IDE\teodozjan\glompVR.git\obj\x86\Release\glomp.exe
