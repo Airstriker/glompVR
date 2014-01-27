@@ -1,5 +1,3 @@
-3d File Manager, currently called glomp (GL object managing... processor?)
-
-So far only worked on in monodevelop on linux, open the .sln file in monodevelop and away you go!
-
-Enjoy for now, more info coming soon
+Virtual Reality ready 3d File Manager based on glomp by sebclarke (https://github.com/sebclarke/Glomp).
+Oposite to original glomp, this version is Windows only.
+Compile with monodevelop 4.0 on Windows, open the .sln file in monodevelop and away you go! Enjoy ;) 
