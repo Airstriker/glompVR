@@ -1,0 +1,5 @@
+F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\bin\Release\glomp.config
+F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\bin\Release\glomp.exe
+F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\bin\Release\OpenTK.dll
+F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\obj\x86\Release\ResolveAssemblyReference.cache
+F:\Julian\Oculus Rift\Projekty\Glomp File Manager\Glomp-master\obj\x86\Release\glomp.exe
