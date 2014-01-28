@@ -735,7 +735,6 @@ public partial class MainWindow : Gtk.Window {
         SetColourForCamHeight();
     }
     
-    
     // external convenience functions
     public Camera GetCamera() {
         return cam;
@@ -748,64 +747,61 @@ public partial class MainWindow : Gtk.Window {
         glwidget1.HasFocus = true;
     }
     
+	static long GetDirectorySize(string directoryFullName)
+	{
+		// 1.
+		// Get array of all file names.
+		string[] listOfFiles = Directory.GetFiles(directoryFullName, "*.*");
+
+		// 2.
+		// Calculate total bytes of all files in a loop.
+		long totalDirectorySize = 0;
+		foreach (string file in listOfFiles)
+		{
+			// 3.
+			// Use FileInfo to get length of each file.
+			System.IO.FileInfo fileInfo = new System.IO.FileInfo(file);
+			totalDirectorySize += fileInfo.Length;
+		}
+
+		// 4.
+		// Return total size
+		return totalDirectorySize;
+	}
+
     private void UpdateDetailsBox() {
         if(detailsBox.Visible) {
             FileNode active = slices.ActiveSlice.GetActiveNode();
-            GLib.File activeFile = GLib.FileFactory.NewForPath(active.File);
+			System.IO.FileInfo fileInfo = new System.IO.FileInfo(active.File);
+
             if(!active.IsDirectory) {
                 detailLabelContents.Visible = false;
                 detailValueContents.Visible = false;
                 
+				long fileSize = fileInfo.Length;
+				detailValueSize.Text = String.Format(new FileSizeFormatProvider(), "{0:fs}", fileSize);
                 
-                detailEntryName.Text = active.FileName;
-                
-                
-                String infoString = "standard::size,standard::content-type,filesystem:free,time::modified,time::access,owner::user,owner::group";
-                GLib.FileInfo info = activeFile.QueryInfo(infoString, FileQueryInfoFlags.None, null);
-                
-                String sizeString = info.GetAttributeAsString("standard::size");
-                detailValueSize.Text = String.Format(new FileSizeFormatProvider(), "{0:fs}", Convert.ToUInt64(sizeString));
-                
-				detailValueType.Text = "dupa";//Gnome.Vfs.Mime.GetDescription(info.ContentType) + " (" + info.ContentType + ")";
-                
-                DateTime tempTime = NodeManager.ConvertFromUnixTimestamp(Convert.ToUInt64(info.GetAttributeAsString("time::access")));
-                detailValueAccessed.Text = tempTime.ToString("ddd, dd MMM yyyy HH':'mm':'ss");
-                
-                tempTime = NodeManager.ConvertFromUnixTimestamp(Convert.ToUInt64(info.GetAttributeAsString("time::modified")));
-                detailValueModified.Text = tempTime.ToString("ddd, dd MMM yyyy HH':'mm':'ss");
-                
-                detailValueSpace.Text = String.Format(new FileSizeFormatProvider(), "{0:fs}",
-                                                      Convert.ToUInt64(info.GetAttributeString("filesystem:free")));
-                
-                detailValueOwner.Text = info.GetAttributeString("owner::user");
-                detailValueGroup.Text = info.GetAttributeString("owner::group");
-                
-                
-            } else {
-                
+				detailValueType.Text = active.Description + " (" + active.FileExtension + " file)";
+
+				detailValueSpace.Text = "dupa"; //String.Format(new FileSizeFormatProvider(), "{0:fs}", Convert.ToUInt64(info.GetAttributeString("filesystem:free")));
+			} else { //This is for directories
                 detailLabelContents.Visible = true;
                 detailValueContents.Visible = true;
-                detailValueSize.Text = "[unsupported]";
+
+				long directorySize = GetDirectorySize(fileInfo.FullName); //to be corrected !
+				detailValueSize.Text = String.Format(new FileSizeFormatProvider(), "{0:fs}", directorySize); //"[unsupported]";
                 
-                detailEntryName.Text = active.FileName;
-                detailValueType.Text = "Directory";
-                
-                String infoString = "time::modified,time::access,owner::user,owner::group";
-                GLib.FileInfo info = activeFile.QueryInfo(infoString, FileQueryInfoFlags.None, null);
-                
-                DateTime tempTime = NodeManager.ConvertFromUnixTimestamp(Convert.ToUInt64(info.GetAttributeAsString("time::access")));
-                detailValueAccessed.Text = tempTime.ToString("ddd, dd MMM yyyy HH':'mm':'ss");
-                
-                tempTime = NodeManager.ConvertFromUnixTimestamp(Convert.ToUInt64(info.GetAttributeAsString("time::modified")));
-                detailValueModified.Text = tempTime.ToString("ddd, dd MMM yyyy HH':'mm':'ss");
-                
+                detailValueType.Text = "Directory";  
                 
                 detailValueContents.Text = active.NumChildren + " items (" + active.NumDirs + " folders)";
-                
-                detailValueOwner.Text = info.GetAttributeString("owner::user");
-                detailValueGroup.Text = info.GetAttributeString("owner::group");
-                
             }
+
+			detailEntryName.Text = active.FileName;
+			detailValueAccessed.Text = fileInfo.LastAccessTime.ToString("ddd, dd MMM yyyy HH':'mm':'ss");
+			detailValueModified.Text = fileInfo.LastWriteTime.ToString("ddd, dd MMM yyyy HH':'mm':'ss");
+			detailValueOwner.Text = "dupa"; //info.GetAttributeString("owner::user");
+			detailValueGroup.Text = "dupa"; //info.GetAttributeString("owner::group");
+
 
 			//DUPA:
 			/*

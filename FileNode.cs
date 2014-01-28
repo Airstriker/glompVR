@@ -28,6 +28,7 @@ namespace glomp {
         private int displayList;
         private String fileName;
         private String file;
+		private String fileExtension;
         private int textureIndex;
         private bool isVisible;
         private bool hasTexture;
@@ -58,7 +59,13 @@ namespace glomp {
         
         public bool culled = false;
         
-
+		private static Bitmap ResizeBitmap(Bitmap sourceBMP, int width, int height )
+		{
+			Bitmap result = new Bitmap(width, height);
+			using (Graphics g = Graphics.FromImage(result))
+				g.DrawImage(sourceBMP, 0, 0, width, height);
+			return result;
+		}
         
         public int NumDirs {
             get { return numDirs; }
@@ -148,6 +155,10 @@ namespace glomp {
             set { thumbFileName = value; }
         }
         
+		public Bitmap ThumbBmp {
+			get { return thumbBmp; }
+			set { thumbBmp = value; }
+		}
         
         public bool IsExecutable {
             get { return isExecutable; }
@@ -163,6 +174,11 @@ namespace glomp {
             get { return file; }
             set { file = value; }
         }
+
+		public String FileExtension {
+			get { return fileExtension; }
+			set { fileExtension = value; }
+		}
         
         private Vector3 textOffset = new Vector3(-3.1f, 0f, 0f);
         
@@ -249,7 +265,7 @@ namespace glomp {
             
             // right... now do the thumbnail if we have one
             
-            if(thumbFileName.Length > 0) {
+			if(thumbBmp != null) {
                 
                 // set up GL for the texture
                 thumbTextureIndex = GL.GenTexture();
@@ -259,31 +275,32 @@ namespace glomp {
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
                 
-                // get at the bitmap data for the thumbnail
-                thumbBmp = new Bitmap(thumbFileName);
+				//get at the bitmap data for the thumbnail
+				/*
+				thumbBmp = new Bitmap(thumbFileName);
                 
-                if(true) {
-                    Bitmap scaled = new Bitmap(128, 128);
-                    int x = 0;
-                    int y = 0;
-                    if(thumbBmp.Width > thumbBmp.Height) {
-                        y = (thumbBmp.Width - thumbBmp.Height)/2;
-                        x = 0;
-                    } else if(thumbBmp.Width < thumbBmp.Height) {
-                        y = 0;
-                        x = (thumbBmp.Height - thumbBmp.Width)/2;
-                    } else {
-                        x = 0;
-                        y = 0;
-                    }
+                Bitmap scaled = new Bitmap(128, 128);
+                int x = 0;
+                int y = 0;
+                if(thumbBmp.Width > thumbBmp.Height) {
+                	y = (thumbBmp.Width - thumbBmp.Height)/2;
+                    x = 0;
+                } else if(thumbBmp.Width < thumbBmp.Height) {
+                    y = 0;
+                    x = (thumbBmp.Height - thumbBmp.Width)/2;
+                } else {
+                    x = 0;
+                    y = 0;
+                } 
                     
-                    
-                    using (Graphics gfx = Graphics.FromImage(scaled)) {
-                        gfx.Clear(Color.White);
-                        gfx.DrawImageUnscaled(thumbBmp, x, y);
-                    }
-                    thumbBmp = scaled;
+                using (Graphics gfx = Graphics.FromImage(scaled)) {
+                	gfx.Clear(Color.White);
+                    gfx.DrawImageUnscaled(thumbBmp, x, y);
                 }
+                thumbBmp = scaled;
+				*/
+				thumbBmp = ResizeBitmap (thumbBmp, 128, 128);
+
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
                                                                 PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero);
                 

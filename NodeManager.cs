@@ -5,6 +5,7 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.WindowsAPICodePack.Shell;
 using Microsoft.Win32;
 
 namespace glomp {
@@ -36,8 +37,7 @@ namespace glomp {
             FileNode node = new FileNode(fi.Basename);
             node.File = fileName;
             //node.NumChildren = fi.
-			FileInfo fileInfo = new FileInfo(fileName);
-			//GLib.FileInfo info = fi.QueryInfo("access::can-execute,thumbnail::path,filesystem::readonly,time::modified", GLib.FileQueryInfoFlags.None, null);
+			System.IO.FileInfo fileInfo = new System.IO.FileInfo(fileName);
             node.SetDisplayList(fileDisplayList);
             
             node.SetParent(owner);
@@ -54,25 +54,33 @@ namespace glomp {
                     node.DirHeight = 1f;
                 }
             } else {
+				node.FileExtension = fileInfo.Extension.Substring(1); //without dot
 				node.Description = GetMIMEDescription(fileInfo.Extension); //This will show what type of file it is
 				node.IsReadOnly = fileInfo.IsReadOnly;
-				node.IsExecutable = (fileInfo.Extension == ".exe"); //extension is with dot
+				node.IsExecutable = (node.FileExtension == "exe");
+
+				//Getting file's ThumbNail (using Windows API Code Pack 1.1)
+				ShellObject nodeFile = ShellObject.FromParsingName (fileInfo.FullName);
+				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
+				try {
+					node.ThumbBmp = nodeFile.Thumbnail.Bitmap;
+				}
+				catch (NotSupportedException) {
+					Console.WriteLine("Error getting the thumbnail. The selected file does not have a valid thumbnail or thumbnail handler.");
+				}
+				catch (InvalidOperationException)
+				{
+					// If we get an InvalidOperationException and our mode is Mode.ThumbnailOnly,
+					// then we have a ShellItem that doesn't have a thumbnail (icon only).
+					node.ThumbBmp = null;
+				}
+
             }
 
 			// Creation, last access, and last write time 
 			node.CreationTime = fileInfo.CreationTime;
 			node.LastAccessTime = fileInfo.LastAccessTime;
 			node.ModifyTime = fileInfo.LastWriteTime;
-
-            //Console.WriteLine(node.File + " : " + node.ModifyTime.ToString("MMMM dd, yyyy"));
-
-			//DUPA
-			/*
-            string previewPath = info.GetAttributeByteString("thumbnail::path");
-            if(previewPath != null) {
-                node.ThumbFileName = previewPath;
-            }
-            */
             
             return node;
         }
