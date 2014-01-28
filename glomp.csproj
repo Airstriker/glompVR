@@ -53,14 +53,35 @@
     <Reference Include="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="OpenTK">
-      <HintPath>bin\Debug\OpenTK.dll</HintPath>
+    <Reference Include="gio-sharp">
+      <HintPath>lib\gio-sharp.dll</HintPath>
     </Reference>
     <Reference Include="GLWidget">
-      <HintPath>bin\Release\GLWidget.dll</HintPath>
+      <HintPath>lib\GLWidget.dll</HintPath>
     </Reference>
-    <Reference Include="gio-sharp">
-      <HintPath>bin\Release\gio-sharp.dll</HintPath>
+    <Reference Include="OpenTK">
+      <HintPath>lib\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack">
+      <HintPath>lib\Windows API Code Pack 1.1\Microsoft.WindowsAPICodePack.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.ExtendedLinguisticServices">
+      <HintPath>lib\Windows API Code Pack 1.1\Microsoft.WindowsAPICodePack.ExtendedLinguisticServices.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.Sensors">
+      <HintPath>lib\Windows API Code Pack 1.1\Microsoft.WindowsAPICodePack.Sensors.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.Shell">
+      <HintPath>lib\Windows API Code Pack 1.1\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.ShellExtensions">
+      <HintPath>lib\Windows API Code Pack 1.1\Microsoft.WindowsAPICodePack.ShellExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.DirectX">
+      <HintPath>lib\Windows API Code Pack 1.1\DirectX\x64\Microsoft.WindowsAPICodePack.DirectX.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.DirectX">
+      <HintPath>lib\Windows API Code Pack 1.1\DirectX\x86\Microsoft.WindowsAPICodePack.DirectX.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

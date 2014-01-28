@@ -1,16 +1,16 @@
-﻿<Properties GitUserInfo="UsingGIT">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="MainWindow.cs">
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="FileNode.cs">
     <Files>
       <File FileName="NodeManager.cs" Line="1" Column="1" />
-      <File FileName="FileNode.cs" Line="1" Column="1" />
-      <File FileName="Main.cs" Line="34" Column="25" />
-      <File FileName="MainWindow.cs" Line="590" Column="2" />
-      <File FileName="FileSlice.cs" Line="48" Column="36" />
+      <File FileName="FileNode.cs" Line="15" Column="35" />
+      <File FileName="Main.cs" Line="1" Column="1" />
+      <File FileName="MainWindow.cs" Line="1" Column="1" />
+      <File FileName="FileSlice.cs" Line="1" Column="1" />
       <File FileName="Camera.cs" Line="1" Column="1" />
       <File FileName="SliceManager.cs" Line="1" Column="1" />
-      <File FileName="SceneNode.cs" Line="16" Column="30" />
-      <File FileName="..\..\..\Windows\Microsoft.NET\Framework\v4.0.30319\Microsoft.Common.targets" Line="1" Column="1" />
+      <File FileName="SceneNode.cs" Line="1" Column="1" />
+      <File FileName="..\..\..\..\Windows\Microsoft.NET\Framework\v4.0.30319\Microsoft.Common.targets" Line="1" Column="1" />
       <File FileName="gtk-gui\MainWindow.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
