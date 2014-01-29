@@ -312,7 +312,6 @@ namespace glomp {
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
                                                         PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
                 thumbBmp.UnlockBits(data);
-                thumbBmp.Dispose();
                 isThumbnailed = true;
             }
      
