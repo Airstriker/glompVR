@@ -80,9 +80,6 @@
     <Reference Include="Microsoft.WindowsAPICodePack.DirectX">
       <HintPath>lib\Windows API Code Pack 1.1\DirectX\x64\Microsoft.WindowsAPICodePack.DirectX.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.WindowsAPICodePack.DirectX">
-      <HintPath>lib\Windows API Code Pack 1.1\DirectX\x86\Microsoft.WindowsAPICodePack.DirectX.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">
@@ -103,6 +100,7 @@
     <Compile Include="SliceManager.cs" />
     <Compile Include="FileSizeFormatProvider.cs" />
     <Compile Include="FrustrumCuller.cs" />
+    <Compile Include="FastDirectoryEnumerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop">

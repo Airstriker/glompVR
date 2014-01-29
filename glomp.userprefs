@@ -1,16 +1,16 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="FileNode.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="NodeManager.cs">
     <Files>
-      <File FileName="NodeManager.cs" Line="1" Column="1" />
-      <File FileName="FileNode.cs" Line="15" Column="35" />
+      <File FileName="FastDirectoryEnumerator.cs" Line="1" Column="1" />
+      <File FileName="FileSlice.cs" Line="1" Column="1" />
+      <File FileName="NodeManager.cs" Line="115" Column="29" />
+      <File FileName="FileNode.cs" Line="1" Column="1" />
       <File FileName="Main.cs" Line="1" Column="1" />
       <File FileName="MainWindow.cs" Line="1" Column="1" />
-      <File FileName="FileSlice.cs" Line="1" Column="1" />
       <File FileName="Camera.cs" Line="1" Column="1" />
       <File FileName="SliceManager.cs" Line="1" Column="1" />
       <File FileName="SceneNode.cs" Line="1" Column="1" />
-      <File FileName="..\..\..\..\Windows\Microsoft.NET\Framework\v4.0.30319\Microsoft.Common.targets" Line="1" Column="1" />
       <File FileName="gtk-gui\MainWindow.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>

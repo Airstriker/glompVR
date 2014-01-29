@@ -4,6 +4,7 @@ using System.IO;
 using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
+using System.Linq;
 
 namespace glomp {
 
@@ -54,7 +55,6 @@ namespace glomp {
         
         
         public FileNode[] fileNodes;
-		public bool showHidden = false;
         
         public float Alpha {
             get { return alpha; }
@@ -111,35 +111,9 @@ namespace glomp {
             path = _path;
             sliceHeight = _sliceHeight;
             parentWindow = parent;
-            
-            LinkedList<String> files = new LinkedList<String>();
-            LinkedList<String> folders = new LinkedList<String>();
-            
-            // prune hidden files
-            if(!showHidden) {
-				String[] rawFiles = Directory.GetFiles(path);
-				String[] rawFolders = Directory.GetDirectories(path);
-                Array.Sort(rawFiles);
-                Array.Sort(rawFolders);
-
-                foreach(var file in rawFiles) {
-                    if(! file.Replace(path, "").StartsWith("/.")) {
-                        files.AddLast(file);
-                    }
-                }
-                foreach(var file in rawFolders) {
-                    if(! file.Replace(path, "").StartsWith("/.")) {
-                        folders.AddLast(file);
-                    }         
-                }
-                
-            } else {
-				files = new LinkedList<String>(Directory.GetFiles(path));
-				folders = new LinkedList<String>(Directory.GetDirectories(path));
-            }
-            
+				           
             // set up storage
-            fileNodes = new FileNode[files.Count + folders.Count];
+			fileNodes = NodeManager.GetFileNodesCollectionFromLocation(path, this);
             numFiles = fileNodes.Length;
 
             // decide if we will show all the labels, or just the ones near us
@@ -147,7 +121,6 @@ namespace glomp {
                 showAllText = true;
             }
          
-            int nodeCount = 0;
             if(numFiles > 0) {
                 // set up width and height in boxes
                 gridWidth = (int)Math.Round(Math.Sqrt(fileNodes.Length)/ASPECT_COEFF, 0);
@@ -155,31 +128,14 @@ namespace glomp {
                 if(fileNodes.Length % gridHeight > 0)
                     gridHeight += 1;
                 
-                // generate the nodes
-                foreach(var folder in folders) {
-                    FileNode node = NodeManager.GetFileNode(NodeManager.DIR_NODE, folder, this);
-                    float xPosition = STARTX - ((nodeCount % gridWidth) * BOX_SPACING);
-                    float zPosition = STARTZ + ((nodeCount / gridWidth) * BOX_SPACING);
-                    node.Position = new Vector3(xPosition, STARTY, zPosition);
-                    if(nodeCount == 0) {
-                        node.Active = true;
-                    }
-                    fileNodes[nodeCount] = node;
-                    nodeCount++;
-                }
-                
-                foreach(var file in files) {
-                    FileNode node = NodeManager.GetFileNode(NodeManager.FILE_NODE, file, this);
-                    float xPosition = STARTX - ((nodeCount % gridWidth) * BOX_SPACING);
-                    float zPosition = STARTZ + ((nodeCount / gridWidth) * BOX_SPACING);
-    
-                    node.Position = new Vector3(xPosition, STARTY, zPosition);
-                    if(nodeCount == 0) {
-                        node.Active = true;
-                    }
-                    fileNodes[nodeCount] = node;
-                    nodeCount++;
-                }
+				//assign position for each node
+				int nodeCount = 0;
+				foreach (var node in fileNodes) {
+					float xPosition = STARTX - ((nodeCount % gridWidth) * BOX_SPACING);
+					float zPosition = STARTZ + ((nodeCount / gridWidth) * BOX_SPACING);
+					node.Position = new Vector3(xPosition, STARTY, zPosition);
+					nodeCount++;
+				}
             }            
             if(showAllText) {
                 GenerateAllTextures();

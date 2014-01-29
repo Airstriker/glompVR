@@ -16,51 +16,107 @@ namespace glomp {
         private static int[] displayLists = new int[2];
         private static bool[] listGenerated = {false, false};
         
-        public static readonly int FILE_NODE = 0;
-        public static readonly int DIR_NODE = 1;
+		public static readonly int FILE_NODE = 0;
+		public static readonly int DIR_NODE = 1;
+
         private static readonly float BOX_SCALE = 0.8f;
+
+		public bool showHidden = true;
         
         public NodeManager() {
         }
         
-        public static FileNode GetFileNode(int nodeType, String fileName, FileSlice owner) {
-            int fileDisplayList;
-            
-            if(listGenerated[nodeType]) {
-                fileDisplayList = displayLists[nodeType];
-            } else {
-                fileDisplayList = displayLists[nodeType] = GenerateDisplayList(nodeType);
-            }
-            
-            GLib.File fi = GLib.FileFactory.NewForPath(fileName);
-            
-            FileNode node = new FileNode(fi.Basename);
-            node.File = fileName;
-            //node.NumChildren = fi.
-			System.IO.FileInfo fileInfo = new System.IO.FileInfo(fileName);
-            node.SetDisplayList(fileDisplayList);
-            
-            node.SetParent(owner);
-            
-            if(nodeType == DIR_NODE) {
-                node.IsDirectory = true;
-                try {
-                    node.NumDirs = Directory.GetDirectories(fileName).Length;
-                    node.NumFiles = Directory.GetFiles(fileName).Length;
-                    node.NumChildren = node.NumDirs + node.NumFiles;
-                    node.DirHeight = GetHeightForFolder(node.NumChildren);
-                } catch {
-                    node.NumChildren = 0;
-                    node.DirHeight = 1f;
-                }
-            } else {
-				node.FileExtension = fileInfo.Extension.Substring(1); //without dot
-				node.Description = GetMIMEDescription(fileInfo.Extension); //This will show what type of file it is
-				node.IsReadOnly = fileInfo.IsReadOnly;
+		public static FileNode[] GetFileNodesCollectionFromLocation(String path, FileSlice owner) {
+		
+			List<FileInfo> files = new List<FileInfo>();  // List that will hold the files and subfiles in path
+			List<DirectoryInfo> folders = new List<DirectoryInfo>(); // List that hold direcotries that cannot be accessed
+			List<FileNode> fileNodesList = new List<FileNode>();
+
+			/*
+			IEnumerable<FileData> files;
+			IEnumerable<String> folders;
+
+			if (!showHidden) {
+				folders = from directory in Directory.EnumerateDirectories (path)
+				          let info = new DirectoryInfo (directory)
+					          where (info.Attributes & FileAttributes.Hidden) == 0
+				          select directory;
+				files = from file in FastDirectoryEnumerator.EnumerateFiles (path)
+					        where (file.Attributes & FileAttributes.Hidden) == 0
+				        select file;
+			} else {
+				folders = Directory.EnumerateDirectories(path);
+				files = FastDirectoryEnumerator.EnumerateFiles(path);
+			}
+			*/
+
+			DirectoryInfo dir = new DirectoryInfo(path);
+			try {
+				foreach (DirectoryInfo folder in dir.GetDirectories()) {
+					folders.Add(folder);
+					FileNode node = NodeManager.GetFileNode(DIR_NODE, folder, owner);
+					fileNodesList.Add(node);            
+				}
+
+				foreach (FileInfo file in dir.GetFiles()) {
+					files.Add(file);
+					FileNode node = NodeManager.GetFileNode(FILE_NODE, file, owner);
+					fileNodesList.Add(node);
+				}
+			}
+			catch {
+				Console.WriteLine("Directory {0}  \n could not be accessed!!!!", dir.FullName);                
+				return null;  // We alredy got an error trying to access dir so dont try to access it again
+			}
+
+			fileNodesList[0].Active = true;
+
+			return fileNodesList.ToArray();
+		}
+
+		public static FileNode GetFileNode(int nodeType, FileSystemInfo element, FileSlice owner) {
+			String fileNodeBaseName = null; //only file name without path
+			String fileNodeName = null; //full path
+
+			DirectoryInfo folder = null;
+			FileInfo file = null;
+			FileNode node = null;
+
+			Type typ = element.GetType();
+			if (nodeType == DIR_NODE) {
+				folder = (DirectoryInfo)element;
+				fileNodeBaseName = folder.Name;
+				fileNodeName = folder.FullName;
+				node = new FileNode(fileNodeBaseName);
+				node.IsDirectory = true;
+
+				try {
+					node.NumDirs = folder.GetDirectories().Length;
+					node.NumFiles = folder.GetFiles().Length;
+					node.NumChildren = node.NumDirs + node.NumFiles;
+					node.DirHeight = GetHeightForFolder(node.NumChildren);
+				} catch {
+					node.NumChildren = 0;
+					node.DirHeight = 1f;
+				}
+
+				// Creation, last access, and last write time 
+				node.CreationTime = folder.CreationTime;
+				node.LastAccessTime = folder.LastAccessTime;
+				node.ModifyTime = folder.LastWriteTime;
+
+			} else if (nodeType == FILE_NODE) {
+				file = (FileInfo)element;
+				fileNodeBaseName = file.Name;
+				fileNodeName = file.FullName;
+				node = new FileNode(fileNodeBaseName);
+				node.FileExtension = file.Extension.Substring(1); //without dot
+				node.Description = GetMIMEDescription(file.Extension); //This will show what type of file it is
+				node.IsReadOnly = file.IsReadOnly;
 				node.IsExecutable = (node.FileExtension == "exe");
 
 				//Getting file's ThumbNail (using Windows API Code Pack 1.1)
-				ShellObject nodeFile = ShellObject.FromParsingName (fileInfo.FullName);
+				ShellObject nodeFile = ShellObject.FromParsingName (fileNodeName);
 				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
 				try {
 					node.ThumbBmp = nodeFile.Thumbnail.Bitmap;
@@ -75,12 +131,22 @@ namespace glomp {
 					node.ThumbBmp = null;
 				}
 
-            }
+				// Creation, last access, and last write time 
+				node.CreationTime = file.CreationTime;
+				node.LastAccessTime = file.LastAccessTime;
+				node.ModifyTime = file.LastWriteTime;
+			}
 
-			// Creation, last access, and last write time 
-			node.CreationTime = fileInfo.CreationTime;
-			node.LastAccessTime = fileInfo.LastAccessTime;
-			node.ModifyTime = fileInfo.LastWriteTime;
+			node.File = fileNodeName;
+			node.SetParent(owner);
+
+			int fileDisplayList;
+			if(listGenerated[nodeType]) {
+				fileDisplayList = displayLists[nodeType];
+			} else {
+				fileDisplayList = displayLists[nodeType] = GenerateDisplayList(nodeType);
+			}
+            node.SetDisplayList(fileDisplayList);
             
             return node;
         }
