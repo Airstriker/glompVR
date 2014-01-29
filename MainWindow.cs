@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using Mono.Unix.Native;
 using glomp;
+using System.Linq;
 
 
 public partial class MainWindow : Gtk.Window {
@@ -635,7 +636,7 @@ public partial class MainWindow : Gtk.Window {
     
     private void NewSlice(String path) {
         // sanity checks first
-        if(Directory.GetFiles(path).Length + Directory.GetDirectories(path).Length == 0) {
+		if(Directory.EnumerateFiles(path).Count() + Directory.EnumerateDirectories(path).Count() == 0) {
             glwidget1.HasFocus = true;
             statusbar6.Pop(0);
             statusbar6.Push(0, " Not Viewing Empty Folder - " + path);
@@ -672,8 +673,8 @@ public partial class MainWindow : Gtk.Window {
             int numFiles;
             int numFolders;
             try {
-                numFiles = Directory.GetFiles(activeNode.File).Length;
-                numFolders = Directory.GetDirectories(activeNode.File).Length;
+				numFiles = Directory.EnumerateFiles(activeNode.File).Count();
+				numFolders = Directory.EnumerateDirectories(activeNode.File).Count();
             } catch(Exception e) {
                 glwidget1.HasFocus = true;
                 statusbar6.Pop(0);
@@ -749,6 +750,8 @@ public partial class MainWindow : Gtk.Window {
     
 	static long GetDirectorySize(string directoryFullName)
 	{
+		long totalDirectorySize = 0;
+		/*
 		// 1.
 		// Get array of all file names.
 		string[] listOfFiles = Directory.GetFiles(directoryFullName, "*.*");
@@ -766,6 +769,8 @@ public partial class MainWindow : Gtk.Window {
 
 		// 4.
 		// Return total size
+		*/
+
 		return totalDirectorySize;
 	}
 

@@ -124,7 +124,7 @@ namespace glomp {
             if(numFiles > 0) {
                 // set up width and height in boxes
                 gridWidth = (int)Math.Round(Math.Sqrt(fileNodes.Length)/ASPECT_COEFF, 0);
-                gridHeight = fileNodes.Length / gridWidth;
+				gridHeight = fileNodes.Length / gridWidth;
                 if(fileNodes.Length % gridHeight > 0)
                     gridHeight += 1;
                 

@@ -7,6 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.WindowsAPICodePack.Shell;
 using Microsoft.Win32;
+using System.Linq;
 
 namespace glomp {
 
@@ -21,45 +22,39 @@ namespace glomp {
 
         private static readonly float BOX_SCALE = 0.8f;
 
-		public bool showHidden = true;
+		public static readonly bool showHidden = false;
         
         public NodeManager() {
         }
         
 		public static FileNode[] GetFileNodesCollectionFromLocation(String path, FileSlice owner) {
 		
-			List<FileInfo> files = new List<FileInfo>();  // List that will hold the files and subfiles in path
-			List<DirectoryInfo> folders = new List<DirectoryInfo>(); // List that hold direcotries that cannot be accessed
 			List<FileNode> fileNodesList = new List<FileNode>();
 
-			/*
-			IEnumerable<FileData> files;
-			IEnumerable<String> folders;
-
-			if (!showHidden) {
-				folders = from directory in Directory.EnumerateDirectories (path)
-				          let info = new DirectoryInfo (directory)
-					          where (info.Attributes & FileAttributes.Hidden) == 0
-				          select directory;
-				files = from file in FastDirectoryEnumerator.EnumerateFiles (path)
-					        where (file.Attributes & FileAttributes.Hidden) == 0
-				        select file;
-			} else {
-				folders = Directory.EnumerateDirectories(path);
-				files = FastDirectoryEnumerator.EnumerateFiles(path);
-			}
-			*/
+			IEnumerable<FileInfo> files;
+			IEnumerable<DirectoryInfo> folders;
 
 			DirectoryInfo dir = new DirectoryInfo(path);
+
 			try {
-				foreach (DirectoryInfo folder in dir.GetDirectories()) {
-					folders.Add(folder);
+				if (!showHidden) {
+					folders = from directory in dir.EnumerateDirectories()
+						          where (directory.Attributes & FileAttributes.Hidden) == 0
+					          select directory;
+					files = from file in dir.EnumerateFiles()
+						        where (file.Attributes & FileAttributes.Hidden) == 0
+					        select file;
+				} else {
+					folders = dir.EnumerateDirectories();
+					files = dir.EnumerateFiles();
+				}
+
+				foreach (DirectoryInfo folder in folders) {
 					FileNode node = NodeManager.GetFileNode(DIR_NODE, folder, owner);
 					fileNodesList.Add(node);            
 				}
 
-				foreach (FileInfo file in dir.GetFiles()) {
-					files.Add(file);
+				foreach (FileInfo file in files) {
 					FileNode node = NodeManager.GetFileNode(FILE_NODE, file, owner);
 					fileNodesList.Add(node);
 				}
@@ -91,8 +86,9 @@ namespace glomp {
 				node.IsDirectory = true;
 
 				try {
-					node.NumDirs = folder.GetDirectories().Length;
-					node.NumFiles = folder.GetFiles().Length;
+
+					node.NumDirs = folder.EnumerateDirectories().Count();
+					node.NumFiles = folder.EnumerateFiles().Count();
 					node.NumChildren = node.NumDirs + node.NumFiles;
 					node.DirHeight = GetHeightForFolder(node.NumChildren);
 				} catch {
