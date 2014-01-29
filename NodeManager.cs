@@ -22,7 +22,7 @@ namespace glomp {
 
         private static readonly float BOX_SCALE = 0.8f;
 
-		public static readonly bool showHidden = false;
+		public static readonly bool showHidden = true;
         
         public NodeManager() {
         }
@@ -77,7 +77,6 @@ namespace glomp {
 			FileInfo file = null;
 			FileNode node = null;
 
-			Type typ = element.GetType();
 			if (nodeType == DIR_NODE) {
 				folder = (DirectoryInfo)element;
 				fileNodeBaseName = folder.Name;
@@ -86,7 +85,6 @@ namespace glomp {
 				node.IsDirectory = true;
 
 				try {
-
 					node.NumDirs = folder.EnumerateDirectories().Count();
 					node.NumFiles = folder.EnumerateFiles().Count();
 					node.NumChildren = node.NumDirs + node.NumFiles;
@@ -106,7 +104,7 @@ namespace glomp {
 				fileNodeBaseName = file.Name;
 				fileNodeName = file.FullName;
 				node = new FileNode(fileNodeBaseName);
-				node.FileExtension = file.Extension.Substring(1); //without dot
+				node.FileExtension = (file.Extension != string.Empty) ? file.Extension.Substring(1) : string.Empty; //without dot
 				node.Description = GetMIMEDescription(file.Extension); //This will show what type of file it is
 				node.IsReadOnly = file.IsReadOnly;
 				node.IsExecutable = (node.FileExtension == "exe");
