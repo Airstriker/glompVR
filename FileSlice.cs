@@ -13,16 +13,16 @@ namespace glomp {
         
         private static readonly int X = 0;
         private static readonly int Y = 1;  
-        private static readonly int leftVisible = -3;
-        private static readonly int rightVisible = 3;
-        private static readonly int forwardVisible = 8;
-        private static readonly int backVisible = -2;
+		private static readonly int leftVisible = -3;//-3 optimal fps when scrolling;
+		private static readonly int rightVisible = 3;//3 optimal fps when scrolling;
+		private static readonly int forwardVisible = 8;//8 optimal fps when scrolling;
+		private static readonly int backVisible = -2;//-2 optimal fps when scrolling;
         
         private static readonly float STARTX = 6.0f;
         private static readonly float STARTY = -2.0f;
         private static readonly float STARTZ = 10.0f;
         private static readonly float ASPECT_COEFF = 1.6f;     
-        private static readonly int SHOW_ALL_LIMIT = 400;
+		private static readonly int SHOW_ALL_LIMIT = 10000;//400; //In fact the lower the value, the faster such a directory will load. However, scrolling fps performance will be very bad (due to live drawing). So, for VR purposes it's better to draw every single file at once - better fps performance. 10000 files limit seems to be "optimal" ;)
         
         public static readonly float BOX_SPACING = 6.0f;  
         public static readonly Vector3 NO_VECTOR = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
