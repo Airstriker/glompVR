@@ -34,6 +34,7 @@ namespace glomp {
         private bool hasTexture;
         private bool isActive;
         private bool isDirectory = false;
+		private bool isDrive = false;
         private bool isDimmed = false;
         private bool isDirFaded = false;
         private bool activeTextureLoaded = false;
@@ -144,6 +145,11 @@ namespace glomp {
             get { return isDirectory; }
             set { isDirectory = value; }
         }
+
+		public bool IsDrive {
+			get { return isDrive; }
+			set { isDrive = value; }
+		}
         
         public bool IsReadOnly {
             get { return isReadOnly; }
@@ -483,7 +489,7 @@ namespace glomp {
             } else if(isDirFaded) {
                 GL.PushAttrib(AttribMask.EnableBit);
                 GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
+				GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
             }
         }
         

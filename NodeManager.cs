@@ -14,11 +14,12 @@ namespace glomp {
 
     public class NodeManager {
         
-        private static int[] displayLists = new int[2];
-        private static bool[] listGenerated = {false, false};
+		private static int[] displayLists = new int[3];
+		private static bool[] listGenerated = {false, false, false};
         
 		public static readonly int FILE_NODE = 0;
 		public static readonly int DIR_NODE = 1;
+		public static readonly int DRIVE_NODE = 2;
 
         private static readonly float BOX_SCALE = 0.8f;
 
@@ -31,12 +32,23 @@ namespace glomp {
 		
 			List<FileNode> fileNodesList = new List<FileNode>();
 
-			IEnumerable<FileInfo> files;
-			IEnumerable<DirectoryInfo> folders;
+			IEnumerable<DriveInfo> drives = null;
+			IEnumerable<FileInfo> files = null;
+			IEnumerable<DirectoryInfo> folders = null;
 
 			DirectoryInfo dir = new DirectoryInfo(path);
 
 			try {
+				if (path == "/") { //The highest level FileSlice
+					drives = DriveInfo.GetDrives();
+					foreach (DriveInfo drive in drives) {
+						FileNode node = NodeManager.GetFileNode(DRIVE_NODE, drive, owner);
+						fileNodesList.Add(node);         
+					}
+					fileNodesList[0].Active = true;
+					return fileNodesList.ToArray(); //At the drives level there are only drives - so returning already here
+				}
+
 				if (!showHidden) {
 					folders = from directory in dir.EnumerateDirectories()
 						          where (directory.Attributes & FileAttributes.Hidden) == 0
@@ -69,15 +81,42 @@ namespace glomp {
 			return fileNodesList.ToArray();
 		}
 
-		public static FileNode GetFileNode(int nodeType, FileSystemInfo element, FileSlice owner) {
+		public static FileNode GetFileNode(int nodeType, Object element, FileSlice owner) {
 			String fileNodeBaseName = null; //only file name without path
 			String fileNodeName = null; //full path
 
+			DriveInfo drive = null;
 			DirectoryInfo folder = null;
 			FileInfo file = null;
 			FileNode node = null;
 
-			if (nodeType == DIR_NODE) {
+			if (nodeType == DRIVE_NODE) {
+				//It's drive and directory at the same time
+				drive = (DriveInfo)element;
+				fileNodeBaseName = drive.Name;
+				fileNodeName = drive.Name;
+				node = new FileNode(fileNodeBaseName);
+				node.IsDirectory = true;
+				node.IsDrive = true;
+
+				DirectoryInfo directory = new DirectoryInfo(fileNodeName); //"converting" drive to directory
+
+				try {
+					node.NumDirs = directory.EnumerateDirectories().Count();
+					node.NumFiles = directory.EnumerateFiles().Count();
+					node.NumChildren = node.NumDirs + node.NumFiles;
+					node.DirHeight = GetHeightForFolder(node.NumChildren);
+				} catch {
+					node.NumChildren = 0;
+					node.DirHeight = 1f;
+				}
+
+				// Creation, last access, and last write time 
+				node.CreationTime = directory.CreationTime;
+				node.LastAccessTime = directory.LastAccessTime;
+				node.ModifyTime = directory.LastWriteTime;
+
+			} else if (nodeType == DIR_NODE) {
 				folder = (DirectoryInfo)element;
 				fileNodeBaseName = folder.Name;
 				fileNodeName = folder.FullName;
@@ -115,11 +154,10 @@ namespace glomp {
 				try {
 					node.ThumbBmp = nodeFile.Thumbnail.Bitmap;
 				}
-				catch (NotSupportedException) {
+				catch {
+					//NotSupportedException
 					Console.WriteLine("Error getting the thumbnail. The selected file does not have a valid thumbnail or thumbnail handler.");
-				}
-				catch (InvalidOperationException)
-				{
+
 					// If we get an InvalidOperationException and our mode is Mode.ThumbnailOnly,
 					// then we have a ShellItem that doesn't have a thumbnail (icon only).
 					node.ThumbBmp = null;
@@ -165,7 +203,10 @@ namespace glomp {
 					{
 						if (rgkey != null) {
 							contentType = rgkey.GetValue ("", string.Empty).ToString ();
-							return contentType;
+							if (contentType != String.Empty)
+								return contentType;
+							else
+								return fileExtension.Substring(1) + " file"; //dot removed
 						}
 					}
 				}
@@ -277,7 +318,58 @@ namespace glomp {
                 
                 GL.EndList();                // Finish display list
                 listGenerated[nodeType] = true;  
-            }
+			
+			} else if (nodeType == DRIVE_NODE) {
+
+				float dirHeight = 1.04f;
+
+				GL.NewList(displayList, ListMode.Compile); // start compiling display list
+				//GL.Color3(boxColour[0], boxColour[1], boxColour[2]);
+				//GL.Scale(BOX_SCALE, BOX_SCALE, BOX_SCALE);
+				GL.Begin(BeginMode.Quads);          // start drawing quads
+
+				// Front Face
+				GL.Normal3( 0.0f, 0.0f, 1.0f);      // Normal Facing Forward
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
+				// Back Face
+				GL.Normal3( 0.0f, 0.0f,-1.0f);      // Normal Facing Away
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
+				// Top Face
+				GL.Normal3( 0.0f, 1.0f, 0.0f);      // Normal Facing Up
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Bottom Right Of The Texture and Quad
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
+				// Bottom Face
+				GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
+				// Right face
+				GL.Normal3( 1.0f, 0.0f, 0.0f);      // Normal Facing Right
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				// Left Face
+				GL.Normal3(-1.0f, 0.0f, 0.0f);      // Normal Facing Left
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
+
+				GL.End();                    // Done Drawing Quads
+
+				GL.EndList();                // Finish display list
+				listGenerated[nodeType] = true;  
+			}
             
             return displayList;       
         }
