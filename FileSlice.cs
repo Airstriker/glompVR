@@ -24,7 +24,8 @@ namespace glomp {
         private static readonly float ASPECT_COEFF = 1.6f;     
 		private static readonly int SHOW_ALL_LIMIT = 10000;//400; //In fact the lower the value, the faster such a directory will load. However, scrolling fps performance will be very bad (due to live drawing). So, for VR purposes it's better to draw every single file at once - better fps performance. 10000 files limit seems to be "optimal" ;)
         
-        public static readonly float BOX_SPACING = 6.0f;  
+		public static readonly float BOX_SPACING_X = 6.0f;
+		public static readonly float BOX_SPACING_Z = 6.0f;  
         public static readonly Vector3 NO_VECTOR = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
         
         public static readonly int BY_TYPE = 0;
@@ -131,8 +132,8 @@ namespace glomp {
 				//assign position for each node
 				int nodeCount = 0;
 				foreach (var node in fileNodes) {
-					float xPosition = STARTX - ((nodeCount % gridWidth) * BOX_SPACING);
-					float zPosition = STARTZ + ((nodeCount / gridWidth) * BOX_SPACING);
+					float xPosition = STARTX - ((nodeCount % gridWidth) * BOX_SPACING_X);
+					float zPosition = STARTZ + ((nodeCount / gridWidth) * BOX_SPACING_Z);
 					node.Position = new Vector3(xPosition, STARTY, zPosition);
 					nodeCount++;
 				}
@@ -160,8 +161,8 @@ namespace glomp {
             
             // set positions based on new order
             for(int i = 0; i < fileNodes.Length; i++) {
-                float xPosition = STARTX - ((i % gridWidth) * BOX_SPACING);
-                float zPosition = STARTZ + ((i / gridWidth) * BOX_SPACING);
+				float xPosition = STARTX - ((i % gridWidth) * BOX_SPACING_X);
+				float zPosition = STARTZ + ((i / gridWidth) * BOX_SPACING_Z);
                 fileNodes[i].Position = new Vector3(xPosition, STARTY, zPosition);
                         
             }
@@ -269,7 +270,7 @@ namespace glomp {
                     }
                 }
                 FileNode.UnsetTextState(isDimmed);
-                GL.PopMatrix();
+				GL.PopMatrix();
             }
         }
         
