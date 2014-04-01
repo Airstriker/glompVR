@@ -1,12 +1,9 @@
 using System;
-using System.Drawing;
 using GLib;
 using System.Collections.Generic;
 using Gtk;
 using OpenTK.Graphics.OpenGL;
 using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Input;
 using System.Diagnostics;
 using System.IO;
 using Mono.Unix.Native;
@@ -24,6 +21,21 @@ public partial class MainWindow : Gtk.Window {
     private float[] lightDiffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
     private float[] lightPosition = {50.0f, 100.0f, -20.0f, 1.0f };
     
+	/*  Skybox Textures  */
+	String[] skyBoxTextures = {
+		"..\\..\\resources\\skybox_front.bmp",
+		"..\\..\\resources\\skybox_right.bmp",
+		"..\\..\\resources\\skybox_left.bmp",
+		"..\\..\\resources\\skybox_back.bmp",
+		"..\\..\\resources\\skybox_up.bmp",
+		"..\\..\\resources\\skybox_down.bmp"
+	};
+
+	//SkyBox object
+	private SkyBox skyBox;
+
+	//Mouse object
+	private Mouse mouse;
 
     private static readonly String START_PATH = "/";
     private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -12.0f, 32.0f);
@@ -81,15 +93,14 @@ public partial class MainWindow : Gtk.Window {
     private bool heightCueEnabled = true;
     private int culledThisFrame = 0;
     
-       
     private LinkedList<SliceManager> sceneList = new LinkedList<SliceManager>();
-	private SliceManager slices; //sprawdzic co to
+	private SliceManager slices;
     private LinkedList<FileNode> selectedNodes = new LinkedList<FileNode>();
    
     
     /* Constructor */
     public MainWindow() : base(Gtk.WindowType.Toplevel) {
-        Build();
+		Build();
         entry4.Activated += new System.EventHandler(this.OnTextEntered);
         findEntry.Activated += new System.EventHandler(this.OnSearchActivated);
         glwidget1.CanFocus = true;
@@ -101,7 +112,7 @@ public partial class MainWindow : Gtk.Window {
         entry4.ModifyText(StateType.Normal, new Gdk.Color(240, 240, 240));
         entry4.ModifyCursor(new Gdk.Color(0, 240, 0), new Gdk.Color(0, 0, 255));
         
-        if(GraphicsContext.ShareContexts) {
+		if(OpenTK.Graphics.GraphicsContext.ShareContexts) {
             GLWidget.GraphicsContextInitialized += new System.EventHandler(this.OnGlwidgetInit);  
             GLWidget.GraphicsContextShuttingDown += new System.EventHandler(this.OnWidgetShuttingDown);
         } else {
@@ -119,6 +130,7 @@ public partial class MainWindow : Gtk.Window {
         glwidget1.GrabFocus();
     }
    
+
     /* Main Widget Init */
     protected virtual void OnGlwidgetInit(object sender, System.EventArgs e) {
         
@@ -126,25 +138,25 @@ public partial class MainWindow : Gtk.Window {
         InitProjectionMatrix();
         
         GL.Enable(EnableCap.DepthTest);
-        GL.Enable(EnableCap.ColorMaterial);
+		GL.Enable(EnableCap.ColorMaterial);
         GL.Enable(EnableCap.Lighting);
         GL.Enable(EnableCap.CullFace);
         GL.CullFace(CullFaceMode.Back);
         
         GL.DepthFunc(DepthFunction.Lequal);
-        GL.ShadeModel(ShadingModel.Smooth);
+		GL.ShadeModel(ShadingModel.Smooth); //smooth or flat
         
         GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
         
         // set background colour
-        GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
+		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
                
         GL.Fog(FogParameter.FogMode, (int)FogMode.Linear);
-        GL.Fog(FogParameter.FogColor, backgroundColour);          // Set Fog Color
+		GL.Fog(FogParameter.FogColor, backgroundColour);          // Set Fog Color
         GL.Fog(FogParameter.FogDensity, 0.1f);               // How Dense Will The Fog Be
         GL.Hint(HintTarget.FogHint, HintMode.Nicest);         // Fog Hint Value
         GL.Fog(FogParameter.FogStart, 130.0f);              // Fog Start Depth
-        GL.Fog(FogParameter.FogEnd, 160.0f);              // Fog Start Depth               // Fog End Depth
+        GL.Fog(FogParameter.FogEnd, 160.0f);              // Fog End Depth
         GL.Enable(EnableCap.Fog);
         
         // now lights
@@ -155,12 +167,20 @@ public partial class MainWindow : Gtk.Window {
         GL.Enable(EnableCap.Light0);   
         
         // setup the scene
-        InitScene(); 
-        GraphicsContext.CurrentContext.VSync = vsync;
+
+		// init SkyBox
+		skyBox = new SkyBox (50.0f, skyBoxTextures);
+        InitScene();
+
+		// init mouse
+		mouse = new Mouse ();
+
+		OpenTK.Graphics.GraphicsContext.CurrentContext.VSync = vsync;
         initted = true;
-        Console.WriteLine(GraphicsContext.CurrentContext.GraphicsMode.ToString());
+		Console.WriteLine(OpenTK.Graphics.GraphicsContext.CurrentContext.GraphicsMode.ToString());
     }
     
+
     private void InitScene() {
         
         slices = new SliceManager(this);
@@ -174,13 +194,10 @@ public partial class MainWindow : Gtk.Window {
         glwidget1.HasFocus = true;
         statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
         
-        
-        
         GLib.Idle.Add(new GLib.IdleHandler(IdleRedraw));
         //GLib.Timeout.Add (10, new GLib.TimeoutHandler (IdleRedraw));
-
-        
     }
+
     
     /* Widget render callback */
     protected virtual void OnGlwidgetRenderFrame(object sender, System.EventArgs e) {
@@ -194,11 +211,10 @@ public partial class MainWindow : Gtk.Window {
         }*/
         culledThisFrame = 0;
         
-        RenderScene();
-        
+		RenderScene();
         
         if (frameTimer.ElapsedMilliseconds > 1000) {
-            this.Title = "GLomp " + frameCounter + "fps - " + slices.ActiveSlice.Path + " - " + culledThisFrame + " nodes culled";
+			this.Title = "GLomp " + frameCounter + "fps - " + slices.ActiveSlice.Path + " - " + culledThisFrame + " nodes culled";
             frameCounter = 0;
             currentTicks = 0;
             frameTimer.Reset();
@@ -211,35 +227,63 @@ public partial class MainWindow : Gtk.Window {
         
         //glwidget1.QueueDraw();
         frameCounter++;   
-        //GraphicsContext.CurrentContext.SwapBuffers();
-        
+        //GraphicsContext.CurrentContext.SwapBuffers();      
     }
+
 
     /* My scene rendering logic */
     private void RenderScene() {
-        UpdateScene();
-        
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        Matrix4 modelview = Matrix4.LookAt(Vector3.Zero, Vector3.UnitZ, Vector3.UnitY);
-        GL.MatrixMode(MatrixMode.Modelview);
-        GL.LoadMatrix(ref modelview);
-        
+	
+		// Updating camera parameters basing on the used inputDevice. Also passing frameDelta here for fps dependent behavior
+		cam.updateCameraParams (ref mouse, ref frameDelta);
+
+		// Changing projection matrix
+		GL.MatrixMode(MatrixMode.Projection);
+		Matrix4 projection;
+		if(glwidget1 == null) {
+			GL.Viewport(0, 0, START_WIDTH, START_HEIGHT);
+			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, START_WIDTH / (float)START_HEIGHT, 0.01f, 500f);
+		} else {
+			GL.Viewport(0, 0, glwidget1.Allocation.Width, glwidget1.Allocation.Height);
+			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 0.01f, 500f);
+		}
+		GL.LoadMatrix(ref projection);
+
+		// Clearing all 
+		GL.Fog(FogParameter.FogColor, backgroundColour);
+		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
+		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+		// Looking in the right direction
+		Matrix4 modelview = Matrix4.LookAt(cam.Eye, cam.Target, cam.Up);
+		GL.MatrixMode(MatrixMode.Modelview);
+		GL.LoadMatrix(ref modelview);
+
+		// Drawing SkyBox
+		skyBox.drawSkyBox(ref frameDelta); //Passing frameDelta for fps dependent animations
+
+		GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
+
+		UpdateScene();
+
         // apply camera transform
-        cam.Transform();
-   
+		cam.Transform();
         
         // render the nodes, just render a slice for now, it renders in order 
-        foreach(SliceManager node in sceneList) {
-            node.Render();
-            this.culledThisFrame = node.culledTotal;
-        }  
+
+		foreach(SliceManager node in sceneList) {
+			node.Render();
+			this.culledThisFrame = node.culledTotal;
+		}
+		
+		GL.PopAttrib ();
     }
     
     private void UpdateScene() {
         
         // move the camera!
         if(inTransition) {
-            UpdateCamPosition();
+			UpdateCamPosition();
         }
         
         // apply scale animation to fileslice
@@ -255,13 +299,10 @@ public partial class MainWindow : Gtk.Window {
 
         if(activeRotateValue > 0.0f) {
             activeRotateValue -=360.0f;
-        }
-        
-        GL.Fog(FogParameter.FogColor, backgroundColour);
-        GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
-        
+        }  
     }
     
+
     public bool IdleRedraw() {
         glwidget1.QueueDraw();
         return true;
@@ -305,8 +346,7 @@ public partial class MainWindow : Gtk.Window {
             }
             break;
         } 
-        return;
-            
+        return;      
     }
     
     protected virtual void OnTextEntered (object o, System.EventArgs args ) {
@@ -398,7 +438,7 @@ public partial class MainWindow : Gtk.Window {
     {
 
         vsync = VSyncEnabledAction.Active;
-        GraphicsContext.CurrentContext.VSync = vsync;
+		OpenTK.Graphics.GraphicsContext.CurrentContext.VSync = vsync;
         System.Console.WriteLine("Changed vsync to " + vsync);
     }
     
@@ -425,7 +465,7 @@ public partial class MainWindow : Gtk.Window {
     protected virtual void OnWidgetShuttingDown (object sender, System.EventArgs e)
     {
         GL.Finish();
-        GraphicsContext current = (GraphicsContext) GraphicsContext.CurrentContext;
+		OpenTK.Graphics.GraphicsContext current = (OpenTK.Graphics.GraphicsContext) OpenTK.Graphics.GraphicsContext.CurrentContext;
         current.MakeCurrent(null);
         current.Dispose();    
     }
@@ -532,7 +572,7 @@ public partial class MainWindow : Gtk.Window {
         Matrix4 projection;
         
         GL.Viewport(0, 0, rect.Width, rect.Height);    
-        projection = Matrix4.CreatePerspectiveFieldOfView((float)Math.PI / 8, rect.Width / (float)rect.Height, 1f, 500f);
+		projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, rect.Width / (float)rect.Height, 0.01f, 500f);
         
         GL.MatrixMode(MatrixMode.Projection);
         GL.LoadMatrix(ref projection);
@@ -542,10 +582,10 @@ public partial class MainWindow : Gtk.Window {
         Matrix4 projection;
         if(glwidget1 == null) {
             GL.Viewport(0, 0, START_WIDTH, START_HEIGHT);
-            projection = Matrix4.CreatePerspectiveFieldOfView((float)Math.PI / 8, START_WIDTH / (float)START_HEIGHT, 1f, 500f);
+			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, START_WIDTH / (float)START_HEIGHT, 0.01f, 500f);
         } else {
             GL.Viewport(0, 0, glwidget1.Allocation.Width, glwidget1.Allocation.Height);    
-            projection = Matrix4.CreatePerspectiveFieldOfView((float)Math.PI / 8, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 1f, 500f);
+			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 0.01f, 500f);
         }
         GL.MatrixMode(MatrixMode.Projection);
         GL.LoadMatrix(ref projection);
@@ -590,8 +630,8 @@ public partial class MainWindow : Gtk.Window {
     }
  
     
-    // user convenience functions 
-    
+	// user convenience functions
+
     private void MoveForward() {
         if (slices.ActiveSlice.MoveCarat(0,1)) {
             ActivateTransition();

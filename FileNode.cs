@@ -388,9 +388,9 @@ namespace glomp {
             }
             
             if(isDirFaded) {
-                GL.Color4(currentColour[0], currentColour[1], currentColour[2], fadeAmount);
+				GL.Color4(currentColour[0], currentColour[1], currentColour[2], fadeAmount);
             } else {
-                GL.Color4(currentColour[0], currentColour[1], currentColour[2], parentSlice.Alpha);
+				GL.Color4(currentColour[0], currentColour[1], currentColour[2], parentSlice.Alpha);
             }
                 
             
@@ -400,7 +400,7 @@ namespace glomp {
                     GL.Translate(Vector3.UnitY * 0.5f);
                 } 
                 if(!isThumbnailed) {
-                    GL.Color4(activeColour[0], activeColour[1], activeColour[2], parentSlice.Alpha);
+					GL.Color4(activeColour[0], activeColour[1], activeColour[2], parentSlice.Alpha);
                 }
             }            
             
@@ -413,23 +413,20 @@ namespace glomp {
             
             
             if(isSelected) {
-                GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
+				GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
                 GL.Disable(EnableCap.Lighting);
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
                 GL.Disable(EnableCap.Texture2D);
-                GL.Color4(Color.White);
+				GL.Color4(Color.White);
                 GL.CallList(displayList);
                 GL.PopAttrib();
             
                 GL.Scale(0.8f, 0.8f, 0.8f);
-    
             }
             
             GL.CallList(displayList);
-            
-            
-            PostRenderBox();
-                
+             
+            PostRenderBox();    
         }
         
         public void DrawLabel() {
@@ -437,6 +434,8 @@ namespace glomp {
                 PreRenderLabel();
          
                 MoveIntoPosition(false);
+
+				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
 
                 if(isActive) {
                     GL.Scale(Vector3.One * 1.3f);
@@ -446,9 +445,9 @@ namespace glomp {
                         GL.Translate(new Vector3(0.0f, 0.35f, 0.0f));
                     }
                     GL.Disable(EnableCap.DepthTest);
-                    GL.Color4(1.0f, 0.4f, 0.4f, parentSlice.Alpha);
+					GL.Color4(1.0f, 0.4f, 0.4f, parentSlice.Alpha);
                 } else {
-                    GL.Color4(0.4f, 1f, 0.8f, parentSlice.Alpha);
+					GL.Color4(0.4f, 1f, 0.8f, parentSlice.Alpha);
                 }
 
                 GL.Begin(BeginMode.Quads);
@@ -461,6 +460,8 @@ namespace glomp {
                 GL.TexCoord2(1.0f, 0.0f); 
                 GL.Vertex3(-5.1f,  1.0f,  0.0f);  // Top Right Of The Texture and Quad
                 GL.End();
+
+				//GL.PopAttrib ();
                 
                 if(isActive) {
                     GL.Enable(EnableCap.DepthTest);
@@ -483,11 +484,13 @@ namespace glomp {
         private void PreRenderBox() {
             GL.PushMatrix();
             if(isThumbnailed) {
-                GL.PushAttrib(AttribMask.EnableBit);
+				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
+				GL.PushAttrib(AttribMask.EnableBit);
                 GL.Enable(EnableCap.Texture2D);
                 GL.BindTexture(TextureTarget.Texture2D, thumbTextureIndex);
             } else if(isDirFaded) {
-                GL.PushAttrib(AttribMask.EnableBit);
+				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
+				GL.PushAttrib(AttribMask.EnableBit);
                 GL.Enable(EnableCap.Blend);
 				GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
             }
@@ -510,7 +513,7 @@ namespace glomp {
             }
             GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.Lighting);
-            GL.PushAttrib(AttribMask.FogBit);
+			GL.PushAttrib(AttribMask.FogBit);
             GL.Disable(EnableCap.Fog);
         }
         
@@ -549,8 +552,8 @@ namespace glomp {
             //textSize = 20;
             using (Graphics gfx = Graphics.FromImage(textLabelBmp)) {
                 String displayText;
-                gfx.Clear(Color.Transparent);
-                gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+				gfx.Clear(Color.Transparent);
+				gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
                 RectangleF drawRect;
                 if(isDirectory) {
                     drawRect = new RectangleF(0f, 0f, textLabelBmp.Width, textLabelBmp.Height);
