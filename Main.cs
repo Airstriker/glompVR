@@ -1,8 +1,5 @@
 using System;
-//using System.Threading;
 using System.Windows.Forms;
-//using System.Security.Permissions;
-using System.Diagnostics;
 using Gtk;
 using GLib;
 

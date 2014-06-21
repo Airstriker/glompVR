@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
+using System.Linq;
+using System.Threading;
+using System.Diagnostics;
 
 namespace glomp {
 
@@ -40,6 +43,7 @@ namespace glomp {
         }
         
         public int Reset(String path) {
+			Trace.WriteLine ("SliceManager.Reset");
             // destroy gl textures
             foreach(var slice in slices) {
                 slice.Destroy();
@@ -52,24 +56,29 @@ namespace glomp {
             
             // make new fileSlice, set to active
             activeSlice = new FileSlice(path, activeSliceHeight, parentWindow);
+			activeSlice.FillFileSliceWithDrives ();
+
+			if(activeSlice.ShowAllText) {
+				activeSlice.GenerateAllTextures ();
+			} else {
+				activeSlice.ResetVisible();
+			}
             activeSlice.Scale = 0f;
             activeSlice.IsScaled = true;
             
             // add to slice list
             activeSliceNode = slices.AddLast(activeSlice);
-            
+
             return activeSliceHeight;
         }
         
-        public void AddSliceAbove(String path) {
+		public void AddSliceAbove(FileSlice activeNodeChildSlice) {
+			Trace.WriteLine ("AddSliceAbove");
             // destroy all existing slices above us
             while(activeSliceNode != slices.Last) {
                 slices.Last.Value.Destroy();
                 slices.RemoveLast();
             }
-            
-            // make new slice
-            FileSlice upperSlice = new FileSlice(path, activeSliceHeight +1, parentWindow);
             
             // set its position
             Vector3 newSlicePosition = activeSlice.Position + (Vector3.UnitY * SLICE_SPACING);
@@ -78,20 +87,42 @@ namespace glomp {
             newSlicePosition.Z += activeSlice.ActiveBox[1] * 6.0f;
             newSlicePosition.X -= activeSlice.ActiveBox[0] * 6.0f;
             
-            upperSlice.Position = newSlicePosition;
-            upperSlice.ResetVisible();
+			activeNodeChildSlice.Position = newSlicePosition;
             
-            activeSlice.HideLabels();
+			//Dimm all nodes in current activeSlice, as it will be replaced with a new one in a second
+			activeSlice.HideLabels();
             
-            activeSliceNode = slices.AddLast(upperSlice);
-            activeSlice = upperSlice;
+			activeSliceNode = slices.AddLast(activeNodeChildSlice);
+			activeSlice = activeNodeChildSlice;
+
+			if(activeSlice.ShowAllText) {
+				activeSlice.GenerateAllTextures ();
+			} else {
+				activeSlice.ResetVisible();
+			}
+
             activeSlice.Scale = 0f;
             activeSlice.IsScaled = true;
             
             activeSliceHeight++;
-        }
-        
+		}
+
+
+		public void AddChildSliceToFileNode(FileNode node) {
+			// make new fileSlice, set to active
+			node.ChildSlice = new FileSlice(node.File, activeSliceHeight + 1 , parentWindow);
+
+			ThreadStart starter = new ThreadStart (node.ChildSlice.FillFileSliceWithDirectoriesAndFiles);
+			Thread oThread = new Thread (starter);
+			oThread.Priority = ThreadPriority.Lowest;
+			oThread.IsBackground = true;
+			// Start the thread
+			oThread.Start();
+		}
+
+
         public int AddSliceBelow() {
+			Trace.WriteLine ("AddSliceBelow");
             String parentPath;
             
             // check if we are at the root
@@ -131,7 +162,7 @@ namespace glomp {
         }
         
         public void MoveUp() {
-            // Check there is a slice above us to move up to
+			// Check if there is a slice above us to move up to
             if(activeSliceNode == slices.Last) {
                 System.Console.WriteLine("Denying move up, no upper slice!");
                 return;
@@ -142,15 +173,14 @@ namespace glomp {
             }
             
             activeSlice.HideLabels();
-            
+
             // set slice above us to be active
             activeSlice = activeSliceNode.Next.Value;
             activeSliceNode = activeSliceNode.Next;
             activeSlice.Activate();
-            
-            
+
             activeSliceHeight++;
-            
+
             // TODO: Destroy textures of slices more than 1 below
             
             
@@ -170,7 +200,7 @@ namespace glomp {
                 activeSliceNode = activeSliceNode.Previous;
                 //activeSlice.ShowLabels();
                 activeSliceHeight--;
-                
+
                 // TODO: Destroy textures of slice more than 1 above
                 // for now just dont render
 

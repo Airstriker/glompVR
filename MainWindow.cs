@@ -9,6 +9,8 @@ using System.IO;
 using Mono.Unix.Native;
 using glomp;
 using System.Linq;
+using System.Diagnostics.Tracing;
+using System.Threading;
 
 
 public partial class MainWindow : Gtk.Window {
@@ -61,6 +63,7 @@ public partial class MainWindow : Gtk.Window {
     private float activeRotateValue = 0.0f;
     private float frameDelta = 0.0005f;
     
+	private bool nodeActivated = false;
     private bool inTransition = false;
     private bool inVerticalTransition = false;
     private Vector3 camTransitionTarget;
@@ -101,7 +104,11 @@ public partial class MainWindow : Gtk.Window {
     /* Constructor */
     public MainWindow() : base(Gtk.WindowType.Toplevel) {
 		Build();
-        entry4.Activated += new System.EventHandler(this.OnTextEntered);
+
+		//System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
+		//this.Fullscreen ();
+        
+		entry4.Activated += new System.EventHandler(this.OnTextEntered);
         findEntry.Activated += new System.EventHandler(this.OnSearchActivated);
         glwidget1.CanFocus = true;
         
@@ -134,6 +141,9 @@ public partial class MainWindow : Gtk.Window {
     /* Main Widget Init */
     protected virtual void OnGlwidgetInit(object sender, System.EventArgs e) {
         
+		Trace.Listeners.Add(new TextWriterTraceListener("C:\\dupa.txt"));
+		Trace.AutoFlush = true;
+
         // open GL setup
         InitProjectionMatrix();
         
@@ -155,8 +165,8 @@ public partial class MainWindow : Gtk.Window {
 		GL.Fog(FogParameter.FogColor, backgroundColour);          // Set Fog Color
         GL.Fog(FogParameter.FogDensity, 0.1f);               // How Dense Will The Fog Be
         GL.Hint(HintTarget.FogHint, HintMode.Nicest);         // Fog Hint Value
-        GL.Fog(FogParameter.FogStart, 130.0f);              // Fog Start Depth
-        GL.Fog(FogParameter.FogEnd, 160.0f);              // Fog End Depth
+		GL.Fog(FogParameter.FogStart, 130.0f); //130             // Fog Start Depth
+		GL.Fog(FogParameter.FogEnd, 160.0f); //160             // Fog End Depth
         GL.Enable(EnableCap.Fog);
         
         // now lights
@@ -175,7 +185,11 @@ public partial class MainWindow : Gtk.Window {
 		// init mouse
 		mouse = new Mouse ();
 
-		OpenTK.Graphics.GraphicsContext.CurrentContext.VSync = vsync;
+		if (vsync) {
+			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 1; //vsync enabled
+		} else {
+			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 0; //vsync disabled
+		}
         initted = true;
 		Console.WriteLine(OpenTK.Graphics.GraphicsContext.CurrentContext.GraphicsMode.ToString());
     }
@@ -184,6 +198,7 @@ public partial class MainWindow : Gtk.Window {
     private void InitScene() {
         
         slices = new SliceManager(this);
+		NodeManager.GenerateDisplayLists ();
         slices.Reset(START_PATH);
         
         sceneList.AddLast(slices);
@@ -206,13 +221,10 @@ public partial class MainWindow : Gtk.Window {
             frameTimer.Start();
         }
         
-        /*if((frameTimer.ElapsedTicks - currentTicks) < 16000 ) {
-            System.Threading.Thread.Sleep(16 - (int) ((frameTimer.ElapsedTicks - currentTicks)/1000.0f));  
-        }*/
         culledThisFrame = 0;
-        
+
 		RenderScene();
-        
+
         if (frameTimer.ElapsedMilliseconds > 1000) {
 			this.Title = "GLomp " + frameCounter + "fps - " + slices.ActiveSlice.Path + " - " + culledThisFrame + " nodes culled";
             frameCounter = 0;
@@ -288,7 +300,11 @@ public partial class MainWindow : Gtk.Window {
         
         // apply scale animation to fileslice
         DoScaleTransition();
-        
+
+		if (nodeActivated) {
+			NodeActivationAnimation ();
+		}
+
         // rotate active box
         if(slices.ActiveSlice.NumFiles > 0) {
             slices.ActiveSlice.GetActiveNode().RotY = activeRotateValue;
@@ -328,7 +344,7 @@ public partial class MainWindow : Gtk.Window {
         case Gdk.Key.Down: MoveBackward(); args.RetVal = true; break;
         case Gdk.Key.Left: MoveLeft(); args.RetVal = true; break;
         case Gdk.Key.Right: MoveRight(); args.RetVal = true; break;
-        case Gdk.Key.Return: NodeActivated(); break;
+		case Gdk.Key.Return: NodeActivated(); break;
         case Gdk.Key.BackSpace: ToParent(true); break;
         case Gdk.Key.Page_Down: ToParent(false); break;
         case Gdk.Key.Page_Up: NavUp(); break;
@@ -436,9 +452,12 @@ public partial class MainWindow : Gtk.Window {
     
     protected virtual void OnVsyncToggle (object sender, System.EventArgs e)
     {
-
         vsync = VSyncEnabledAction.Active;
-		OpenTK.Graphics.GraphicsContext.CurrentContext.VSync = vsync;
+		if (vsync) {
+			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 1; //vsync enabled
+		} else {
+			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 0; //vsync disabled
+		}
         System.Console.WriteLine("Changed vsync to " + vsync);
     }
     
@@ -499,6 +518,7 @@ public partial class MainWindow : Gtk.Window {
                 SetColourForCamHeight();
             }
             UpdateDetailsBox();
+	
         } else{
             cam.Move((camTransitionTarget - camTransitionStart) * frameDelta * 4.0f);
             if(heightCueEnabled) {
@@ -518,6 +538,19 @@ public partial class MainWindow : Gtk.Window {
         
     }
     
+
+	private void NodeActivationAnimation() {
+		FileNode activeNode = slices.ActiveSlice.GetActiveNode();
+		if (activeNode.ChildSlice != null && activeNode.ChildSlice.FillingFileSliceInProgress && !activeNode.ChildSlice.FileSliceFilled) {
+			//TODO: Animate NodeActivation
+
+		} else if (activeNode.ChildSlice != null && !activeNode.ChildSlice.FillingFileSliceInProgress && activeNode.ChildSlice.FileSliceFilled) {
+			nodeActivated = false;
+			NodeActivated ();
+		}
+	}
+
+
     private void DoScaleTransition() {
         if(doScaleIn) {
             
@@ -708,21 +741,18 @@ public partial class MainWindow : Gtk.Window {
     }
         
     private void NodeActivated() {
+		Trace.WriteLine ("NodeActivated");
+		if (nodeActivated) {
+			return;
+		}
         FileNode activeNode = slices.ActiveSlice.GetActiveNode();
         if(activeNode.IsDirectory) {
-            int numFiles;
-            int numFolders;
-            try {
-				numFiles = Directory.EnumerateFiles(activeNode.File).Count();
-				numFolders = Directory.EnumerateDirectories(activeNode.File).Count();
-            } catch(Exception e) {
-                glwidget1.HasFocus = true;
-                statusbar6.Pop(0);
-                statusbar6.Push(0, " Error viewing folder - " + activeNode.File + " : " + e.Message);
-                return;
-            }
-                
-            if(numFiles + numFolders == 0) {
+			if (activeNode.ChildSlice == null) {
+				nodeActivated = true;
+				slices.AddChildSliceToFileNode (activeNode);
+				return;
+			}
+			if(activeNode.ChildSlice.NumFiles == 0) {
                 glwidget1.HasFocus = true;
                 statusbar6.Pop(0);
                 statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
@@ -730,9 +760,10 @@ public partial class MainWindow : Gtk.Window {
             }
             inVerticalTransition = true;
             fadeOut = true;
-            scaleIn = true;
+			scaleIn = true;
             sliceToFade = slices.ActiveSlice;
-            slices.AddSliceAbove(activeNode.File);
+			slices.AddSliceAbove(activeNode.ChildSlice);
+			slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
             ChangedActive();
             ActivateTransition();
             statusbar6.Pop(0);
@@ -744,8 +775,7 @@ public partial class MainWindow : Gtk.Window {
             // TODO: Launch using GIO
             System.Diagnostics.Process.Start(activeNode.File);
             statusbar6.Pop(0);
-            statusbar6.Push(0, " Launched " + activeNode.File);
-            
+            statusbar6.Push(0, " Launched " + activeNode.File);   
         }
     }
     
@@ -916,7 +946,6 @@ public partial class MainWindow : Gtk.Window {
     }
     
     private void EnableDetailPermissions(bool enable) {
-
         permissionCheckOR.Sensitive = enable;
         permissionCheckGR.Sensitive = enable;
         permissionCheckUR.Sensitive = enable;
@@ -926,7 +955,6 @@ public partial class MainWindow : Gtk.Window {
         permissionCheckOX.Sensitive = enable;
         permissionCheckGX.Sensitive = enable;
         permissionCheckUX.Sensitive = enable;
-
     }
     
     private void ApplyNewPermissions() {
@@ -1002,11 +1030,4 @@ public partial class MainWindow : Gtk.Window {
     {
         RenameFile(detailEntryName.Text);
     }
-    
-    
-    
-    
-    
-    
-    
 }

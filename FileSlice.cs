@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using System.Linq;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.WindowsAPICodePack.Shell;
 
 namespace glomp {
 
@@ -31,6 +35,10 @@ namespace glomp {
         public static readonly int BY_TYPE = 0;
         public static readonly int BY_NAME = 1;
         public static readonly int BY_DATE = 2;
+
+		public static readonly int FILE_NODE = 0;
+		public static readonly int DIR_NODE = 1;
+		public static readonly int DRIVE_NODE = 2;
         
         public Vector3 camOffset = new Vector3(5.0f, -12.0f, 32.0f);
         
@@ -40,7 +48,7 @@ namespace glomp {
         private int[] activeBox = {0,0};
         private bool showAllText = false;      
         private FileNode toNode;
-        private int numFiles;
+		private int numFiles = 0;
         private String path;
         private int sliceHeight;
         private float alpha = 0.5f;
@@ -53,8 +61,10 @@ namespace glomp {
         private bool visible = true;
         private MainWindow parentWindow;
         public int cullCount = 0;
-        
-        
+		private bool fileSliceFilled = false; //Will be set to true if the thread has finished filling it with nodes
+		private bool fillingFileSliceInProgress = false;
+		public static readonly bool showHidden = true;
+
         public FileNode[] fileNodes;
         
         public float Alpha {
@@ -70,7 +80,20 @@ namespace glomp {
             }
         }
         
+		public bool FileSliceFilled {
+			get { return fileSliceFilled; }
+			set { fileSliceFilled = value; }
+		}
+
+		public bool FillingFileSliceInProgress {
+			get { return fillingFileSliceInProgress; }
+			set { fillingFileSliceInProgress = value; }
+		}
        
+		public bool ShowAllText {
+			get { return showAllText; }
+			set { showAllText = value; }
+		}
         
         public bool Visible {
             get { return visible; }
@@ -107,28 +130,98 @@ namespace glomp {
             get { return numFiles; }
         }
         
-        public FileSlice(String _path, int _sliceHeight, MainWindow parent) 
+        public FileSlice(String _path, int _sliceHeight, MainWindow parent)
             : base () {
-            path = _path;
-            sliceHeight = _sliceHeight;
-            parentWindow = parent;
-				           
-            // set up storage
-			fileNodes = NodeManager.GetFileNodesCollectionFromLocation(path, this);
-            numFiles = fileNodes.Length;
+			Trace.WriteLine ("FileSlice");
+			path = _path;
+			sliceHeight = _sliceHeight;
+			parentWindow = parent;
+			fileSliceFilled = false;
+		}
 
-            // decide if we will show all the labels, or just the ones near us
-            if(fileNodes.Length < SHOW_ALL_LIMIT) {
-                showAllText = true;
-            }
-         
-            if(numFiles > 0) {
-                // set up width and height in boxes
-                gridWidth = (int)Math.Round(Math.Sqrt(fileNodes.Length)/ASPECT_COEFF, 0);
+		public void FillFileSliceWithDrives () {
+			DriveInfo[] drives;
+			drives = DriveInfo.GetDrives();
+			foreach (DriveInfo drive in drives) {
+				FileNode node = new FileNode (drive.Name);
+				node.IsDirectory = true;
+				node.IsDrive = true;
+
+				DirectoryInfo directory = new DirectoryInfo (drive.Name); //"converting" drive to directory
+
+				try {
+					node.NumDirs = directory.EnumerateDirectories ().Count ();
+					node.NumFiles = directory.EnumerateFiles ().Count ();
+					node.NumChildren = node.NumDirs + node.NumFiles;
+					node.DirHeight = NodeManager.GetHeightForFolder (node.NumChildren);
+				} catch {
+					node.NumChildren = 0;
+					node.DirHeight = 1f;
+				}
+
+				// Creation, last access, and last write time 
+				node.CreationTime = directory.CreationTime;
+				node.LastAccessTime = directory.LastAccessTime;
+				node.ModifyTime = directory.LastWriteTime;
+
+				node.File = drive.Name;
+				node.SetParent (this);
+
+				//Assigning display list for node
+				node.SetDisplayList (NodeManager.displayLists [DRIVE_NODE]);
+
+				List<FileNode> fileNodesList = null;
+				if (fileNodes == null) {
+					fileNodesList = new List<FileNode> ();
+				} else {
+					fileNodesList = new List<FileNode> (fileNodes);
+				}
+				fileNodesList.Add (node);
+				fileNodes = fileNodesList.ToArray();
+			}
+
+			fileNodes[0].Active = true;
+
+			SetFileSliceParameters ();
+		}
+
+
+		public void FillFileSliceWithDirectoriesAndFiles () {
+			Trace.WriteLine ("FillFileSlice");
+			fillingFileSliceInProgress = true;
+            // set up storage
+			GetFileNodesCollectionFromLocation(path);
+
+			SetFileSliceParameters ();
+        }
+
+
+		public void SetFileSliceParameters() {
+
+			if (fileNodes == null) {
+				//nothing to show - directory empty
+				fileSliceFilled = true;
+				fillingFileSliceInProgress = false;
+				return;
+			}
+			else {
+				numFiles = fileNodes.Length;
+			}
+
+			// decide if we will show all the labels, or just the ones near us
+			if (fileNodes.Length < SHOW_ALL_LIMIT) {
+				showAllText = true;
+			} else {
+				showAllText = false;
+			}
+
+			if(numFiles > 0) {
+				// set up width and height in boxes
+				gridWidth = (int)Math.Round(Math.Sqrt(fileNodes.Length)/ASPECT_COEFF, 0);
 				gridHeight = fileNodes.Length / gridWidth;
-                if(fileNodes.Length % gridHeight > 0)
-                    gridHeight += 1;
-                
+				if(fileNodes.Length % gridHeight > 0)
+					gridHeight += 1;
+
 				//assign position for each node
 				int nodeCount = 0;
 				foreach (var node in fileNodes) {
@@ -137,15 +230,190 @@ namespace glomp {
 					node.Position = new Vector3(xPosition, STARTY, zPosition);
 					nodeCount++;
 				}
-            }            
-            if(showAllText) {
-                GenerateAllTextures();
-            } else {
-                ResetVisible();
-            }
-               
-        }
+			}
+
+			fileSliceFilled = true;
+			fillingFileSliceInProgress = false;
+		}
         
+
+		public void GetFileNodesCollectionFromLocation(String path) {
+			//Count of files traversed and timer for diagnostic output 
+			int fileCount = 0;
+			//var sw = Stopwatch.StartNew();
+
+			// Determine whether to parallelize file processing on each folder based on processor count. 
+			int procCount = System.Environment.ProcessorCount;
+
+			if (!Directory.Exists(path)) {
+				return;
+			}
+
+			// Data structure to hold names of subfolders to be examined for files.
+			Stack<FileSystemInfo> directoriesAndFiles = new Stack<FileSystemInfo>();
+
+			DirectoryInfo rootDir = new DirectoryInfo(path);
+			IEnumerable<FileSystemInfo> directories = null;
+			IEnumerable<FileSystemInfo> files = null;
+
+			try {
+				if (!showHidden) {
+					directories = from directory in rootDir.EnumerateDirectories()
+							where (directory.Attributes & FileAttributes.Hidden) == 0
+						select directory;
+					files = from file in rootDir.EnumerateFiles()
+							where (file.Attributes & FileAttributes.Hidden) == 0
+						select file;
+				} else {
+					directories = rootDir.EnumerateDirectories();
+					files = rootDir.EnumerateFiles();
+				}
+
+				foreach (FileSystemInfo directory in directories)
+					directoriesAndFiles.Push(directory);
+					
+				foreach (FileSystemInfo file in files)
+					directoriesAndFiles.Push(file);
+			}
+			// Thrown if we do not have discovery permission on the directory. 
+			catch (UnauthorizedAccessException e) {
+				Console.WriteLine(e.Message);
+			}
+			// Thrown if another process has deleted the directory after we retrieved its name. 
+			catch (DirectoryNotFoundException e) {
+				Console.WriteLine(e.Message);
+			}
+			catch (IOException e) {
+				Console.WriteLine(e.Message);
+			}
+
+			// Execute in parallel if there are enough files in the directory. 
+			// Otherwise, execute sequentially.Files are opened and processed 
+			// synchronously but this could be modified to perform async I/O. 
+			try {
+
+				if (directoriesAndFiles.Count < procCount) {
+					foreach (var element in directoriesAndFiles) {
+						GetFileNode(element, null, 0);
+						fileCount++;                            
+					}
+				}
+				else {
+				Parallel.ForEach(directoriesAndFiles, () => 0, GetFileNode, (c) => {
+					Interlocked.Add(ref fileCount, c);                          
+				});
+				}
+			}
+			catch (AggregateException ae) {
+				ae.Handle((ex) => {
+					if (ex is UnauthorizedAccessException) {
+						// Here we just output a message and go on.
+						Console.WriteLine(ex.Message);
+						return true;
+					}
+					// Handle other exceptions here if necessary... 
+
+					return false;
+				});
+			}
+
+			if (fileNodes != null && fileNodes.Length != 0)
+				fileNodes[0].Active = true;
+
+			// For diagnostic purposes.
+			//Trace.WriteLine ("Processed {0} files in {1} milleseconds", fileCount, sw.ElapsedMilliseconds);
+		}
+
+
+		public int GetFileNode(FileSystemInfo element, ParallelLoopState loopState, int elementsCount) {
+			Trace.WriteLine ("GetFileNode");
+			String fileNodeBaseName = null; //only file name without path
+			String fileNodeName = null; //full path
+
+			DirectoryInfo folder = null;
+			FileInfo file = null;
+			FileNode node = null;
+
+			int nodeType = FILE_NODE;
+
+			// Determine if entry is really a directory
+			if ((element.Attributes & FileAttributes.Directory) == FileAttributes.Directory) {
+				nodeType = DIR_NODE;
+			}
+
+			if (nodeType == DIR_NODE) {
+				folder = (DirectoryInfo)element;
+				fileNodeBaseName = folder.Name;
+				fileNodeName = folder.FullName;
+				node = new FileNode (fileNodeBaseName);
+				node.IsDirectory = true;
+
+				try {
+					node.NumDirs = folder.EnumerateDirectories ().Count ();
+					node.NumFiles = folder.EnumerateFiles ().Count ();
+					node.NumChildren = node.NumDirs + node.NumFiles;
+					node.DirHeight = NodeManager.GetHeightForFolder (node.NumChildren);
+				} catch {
+					node.NumChildren = 0;
+					node.DirHeight = 1f;
+				}
+
+				// Creation, last access, and last write time 
+				node.CreationTime = folder.CreationTime;
+				node.LastAccessTime = folder.LastAccessTime;
+				node.ModifyTime = folder.LastWriteTime;
+
+			} else if (nodeType == FILE_NODE) {
+				file = (FileInfo)element;
+				fileNodeBaseName = file.Name;
+				fileNodeName = file.FullName;
+				node = new FileNode (fileNodeBaseName);
+				node.FileExtension = (file.Extension != string.Empty) ? file.Extension.Substring (1) : string.Empty; //without dot
+				node.Description = NodeManager.GetMIMEDescription (file.Extension); //This will show what type of file it is
+				node.IsReadOnly = file.IsReadOnly;
+				node.IsExecutable = (node.FileExtension == "exe");
+
+				//Getting file's ThumbNail (using Windows API Code Pack 1.1)
+				ShellObject nodeFile = ShellObject.FromParsingName (fileNodeName);
+				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
+				try {
+					node.ThumbBmp = nodeFile.Thumbnail.Bitmap;
+				} catch {
+					//NotSupportedException
+					Console.WriteLine ("Error getting the thumbnail. The selected file does not have a valid thumbnail or thumbnail handler.");
+
+					// If we get an InvalidOperationException and our mode is Mode.ThumbnailOnly,
+					// then we have a ShellItem that doesn't have a thumbnail (icon only).
+					node.ThumbBmp = null;
+				}
+
+				// Creation, last access, and last write time 
+				node.CreationTime = file.CreationTime;
+				node.LastAccessTime = file.LastAccessTime;
+				node.ModifyTime = file.LastWriteTime;
+			}
+
+			node.File = fileNodeName;
+			node.SetParent (this);
+
+			//Assigning display list for node
+			node.SetDisplayList (NodeManager.displayLists [nodeType]);
+
+			List<FileNode> fileNodesList = null;
+			if (fileNodes == null) {
+				fileNodesList = new List<FileNode> ();
+			} else {
+				fileNodesList = new List<FileNode> (fileNodes);
+			}
+			fileNodesList.Add (node);
+
+			lock (this) {
+				fileNodes = fileNodesList.ToArray ();
+			}
+
+			return ++elementsCount;
+		}
+
         
         public void ReFormat(int sortBy) {
             currentSortType = sortBy;
@@ -173,6 +441,7 @@ namespace glomp {
 
         
         public void ResetVisible() {
+			Trace.WriteLine ("ResetVisible");
             // caclulate x,ys for visible nodes
             if(showAllText) {
                 return;
@@ -302,16 +571,16 @@ namespace glomp {
                 return false;
             }
             
-            
             fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]].Active = false;
             activeBox[X] += xMove;
             activeBox[Y] += yMove;
             toNode.Active = true;
             return true;
         }
+
         
-        
-        private void GenerateAllTextures() {
+		public void GenerateAllTextures() {
+			Trace.WriteLine ("GenerateAllTextures");
             foreach(var node in fileNodes) {
                 node.Visible = true;
                 node.GenTexture(false);
@@ -518,9 +787,6 @@ namespace glomp {
             fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]].Selected = !fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]].Selected;
             return fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]].Selected;
             
-        }
-        
-        
-        
+        }  
     }
 }

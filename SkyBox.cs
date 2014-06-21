@@ -150,12 +150,11 @@ namespace glomp
 			//GL.Scale(5.0f, 5.0f, 5.0f);
 
 			//Rotates, making sure it rotates around the center of the cube
-			/*
+
 			GL.PushMatrix ();
-			GL.Translate(0.5f, 1.0f, 0.0f);
-			GL.Rotate(spotLightDirectionAngle, 1.0f, 1.0f, 1.0f);
-			GL.Translate(-0.5f, -1.0f, 0.0f);
-			*/
+			//GL.Translate(0.5f, 1.0f, 0.0f);
+			GL.Rotate(spotLightDirectionAngle * 5, 1.0f, 1.0f, 1.0f);
+			//GL.Translate(-0.5f, -1.0f, 0.0f);
 
 			this.enableLights (ref frameDelta);
 
@@ -248,7 +247,7 @@ namespace glomp
 
 			this.disableLights ();
 
-			//GL.PopMatrix ();
+			GL.PopMatrix ();
 
 			/*
 			GL.PopMatrix(); //Restoring Projection matrix

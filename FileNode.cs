@@ -4,6 +4,7 @@ using System.Drawing;
 using OpenTK.Graphics.OpenGL;
 using OpenTK;
 using GLib;
+using System.Diagnostics;
 
 namespace glomp {
 
@@ -37,7 +38,6 @@ namespace glomp {
 		private bool isDrive = false;
         private bool isDimmed = false;
         private bool isDirFaded = false;
-        private bool activeTextureLoaded = false;
         private bool isReadOnly = false;
         private bool isExecutable = false;
         private String thumbFileName = "";
@@ -56,18 +56,22 @@ namespace glomp {
         private int numDirs = 0;
         private int numFiles = 0;
         private bool isSelected = false;
-        private FileSlice parentSlice;
+		private FileSlice childSlice = null;
+		private FileSlice parentSlice = null;
+		public bool culled = false;
         
-        public bool culled = false;
-        
-		private static Bitmap ResizeBitmap(Bitmap sourceBMP, int width, int height )
-		{
+		private static Bitmap ResizeBitmap(Bitmap sourceBMP, int width, int height ) {
 			Bitmap result = new Bitmap(width, height);
 			using (Graphics g = Graphics.FromImage(result))
 				g.DrawImage(sourceBMP, 0, 0, width, height);
 			return result;
 		}
-        
+
+		public FileSlice ChildSlice {
+			get { return childSlice; }
+			set { childSlice = value; }
+		}
+
         public int NumDirs {
             get { return numDirs; }
             set { numDirs = value; }
@@ -237,6 +241,7 @@ namespace glomp {
         }
         
         public void GenTexture(bool force) {
+			Trace.WriteLine ("GenTexture");
             if(hasTexture) {
                 if(!force) {
                     return;
@@ -325,6 +330,7 @@ namespace glomp {
         
         
         public void DestroyTexture() {
+			Trace.WriteLine ("DestroyTexture");
             if(hasTexture) {
                 hasTexture = false;
                 int[] textures = {textureIndex,thumbTextureIndex};
@@ -543,11 +549,11 @@ namespace glomp {
                 GL.Disable(EnableCap.Blend);   
             }
         }
-        
-            
+          
         
         // updates the bitmap we use for our text
         private void UpdateBitmap(bool activeTexture) {
+			Trace.WriteLine ("UpdateBitmap");
             textLabelBmp = new Bitmap(textureWidth, textureHeight);
             //textSize = 20;
             using (Graphics gfx = Graphics.FromImage(textLabelBmp)) {
@@ -594,10 +600,5 @@ namespace glomp {
         public void SetParent(FileSlice newParent) {
             parentSlice = newParent;
         }
-        
-       
-        
-        
-        
     }
 }
