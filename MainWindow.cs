@@ -302,7 +302,7 @@ public partial class MainWindow : Gtk.Window {
         DoScaleTransition();
 
 		if (nodeActivated) {
-			NodeActivationAnimation ();
+			CheckIfChildSliceFilled();
 		}
 
         // rotate active box
@@ -350,6 +350,7 @@ public partial class MainWindow : Gtk.Window {
         case Gdk.Key.Page_Up: NavUp(); break;
         case Gdk.Key.Home: slices.ActiveSlice.ReFormat(FileSlice.BY_TYPE); doScaleIn = true; break;
         case Gdk.Key.End: slices.ActiveSlice.ReFormat(FileSlice.BY_NAME); doScaleIn = true; break;
+		case Gdk.Key.Escape: Application.Quit (); break;
         case Gdk.Key.space: ToggleSelected(); break;
         default:
             if(args.Event.Key == Gdk.Key.f && (args.Event.State & Gdk.ModifierType.ControlMask) != 0) {
@@ -539,13 +540,11 @@ public partial class MainWindow : Gtk.Window {
     }
     
 
-	private void NodeActivationAnimation() {
+	private void CheckIfChildSliceFilled() {
 		FileNode activeNode = slices.ActiveSlice.GetActiveNode();
-		if (activeNode.ChildSlice != null && activeNode.ChildSlice.FillingFileSliceInProgress && !activeNode.ChildSlice.FileSliceFilled) {
-			//TODO: Animate NodeActivation
-
-		} else if (activeNode.ChildSlice != null && !activeNode.ChildSlice.FillingFileSliceInProgress && activeNode.ChildSlice.FileSliceFilled) {
+		if (activeNode.ChildSlice != null && !activeNode.ChildSlice.FillingFileSliceInProgress && activeNode.ChildSlice.FileSliceFilled) {
 			nodeActivated = false;
+			activeNode.NodeActivated = false;
 			NodeActivated ();
 		}
 	}
@@ -748,6 +747,7 @@ public partial class MainWindow : Gtk.Window {
         FileNode activeNode = slices.ActiveSlice.GetActiveNode();
         if(activeNode.IsDirectory) {
 			if (activeNode.ChildSlice == null) {
+				activeNode.NodeActivated = true;
 				nodeActivated = true;
 				slices.AddChildSliceToFileNode (activeNode);
 				return;

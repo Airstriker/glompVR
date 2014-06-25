@@ -40,6 +40,7 @@ namespace glomp {
         private bool isDirFaded = false;
         private bool isReadOnly = false;
         private bool isExecutable = false;
+		private bool isNodeActivated = false;
         private String thumbFileName = "";
         private int thumbTextureIndex;
         private Bitmap thumbBmp;
@@ -92,6 +93,11 @@ namespace glomp {
             get { return isDirFaded; }
             set { isDirFaded = value; }
         }
+
+		public bool NodeActivated {
+			get { return isNodeActivated; }
+			set { isNodeActivated = value; }
+		}
         
         public float FadeAmount {
             get { return fadeAmount; }
@@ -393,9 +399,11 @@ namespace glomp {
                 } 
             }
             
-            if(isDirFaded) {
-				GL.Color4(currentColour[0], currentColour[1], currentColour[2], fadeAmount);
-            } else {
+			if (isDirFaded) {
+				GL.Color4 (currentColour [0], currentColour [1], currentColour [2], fadeAmount);
+			} else if (isNodeActivated) {
+				GL.Color4 (currentColour [0], currentColour [1], currentColour [2], fadeAmount);
+			} else {
 				GL.Color4(currentColour[0], currentColour[1], currentColour[2], parentSlice.Alpha);
             }
                 
@@ -421,7 +429,7 @@ namespace glomp {
             if(isSelected) {
 				GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
                 GL.Disable(EnableCap.Lighting);
-                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+				GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
                 GL.Disable(EnableCap.Texture2D);
 				GL.Color4(Color.White);
                 GL.CallList(displayList);
@@ -430,7 +438,7 @@ namespace glomp {
                 GL.Scale(0.8f, 0.8f, 0.8f);
             }
             
-            GL.CallList(displayList);
+			GL.CallList(displayList);
              
             PostRenderBox();    
         }
@@ -499,7 +507,12 @@ namespace glomp {
 				GL.PushAttrib(AttribMask.EnableBit);
                 GL.Enable(EnableCap.Blend);
 				GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
-            }
+			} else if(isNodeActivated) {
+				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
+				GL.PushAttrib(AttribMask.EnableBit);
+				GL.Enable(EnableCap.Blend);
+				GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
+			}
         }
         
         private void PostRenderBox() {
@@ -507,6 +520,9 @@ namespace glomp {
             if(isThumbnailed || isDirFaded) {
                 GL.PopAttrib();
             }
+			if (isNodeActivated) {
+				GL.PopAttrib();
+			}
         }
         
         public static void SetTextState(bool dimmed) {

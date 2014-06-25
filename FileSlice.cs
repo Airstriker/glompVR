@@ -524,7 +524,7 @@ namespace glomp {
                         
                         
                         fileNodes[i].culled = false;
-                        fileNodes[i].DrawBox(i);
+						fileNodes[i].DrawBox(i);	//the main boxes drawing method
                     } else {
                         fileNodes[i].culled = true;
                         cullCount++;       

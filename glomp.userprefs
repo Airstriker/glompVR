@@ -1,27 +1,29 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="FileSlice.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="MainWindow.cs">
     <Files>
-      <File FileName="SliceManager.cs" Line="1" Column="1" />
-      <File FileName="FileSlice.cs" Line="1" Column="1" />
+      <File FileName="SliceManager.cs" Line="235" Column="26" />
+      <File FileName="FileSlice.cs" Line="528" Column="29" />
       <File FileName="NodeManager.cs" Line="1" Column="1" />
-      <File FileName="FileNode.cs" Line="1" Column="1" />
-      <File FileName="MainWindow.cs" Line="893" Column="14" />
+      <File FileName="FileNode.cs" Line="508" Column="44" />
+      <File FileName="MainWindow.cs" Line="529" Column="11" />
       <File FileName="Util.cs" Line="1" Column="1" />
       <File FileName="Camera.cs" Line="1" Column="1" />
       <File FileName="SkyBox.cs" Line="1" Column="1" />
       <File FileName="Main.cs" Line="1" Column="1" />
-      <File FileName="SceneNode.cs" Line="1" Column="1" />
+      <File FileName="SceneNode.cs" Line="64" Column="9" />
       <File FileName="glomp.csproj" Line="1" Column="1" />
       <File FileName="TextureManager.cs" Line="1" Column="1" />
       <File FileName="Mouse.cs" Line="1" Column="1" />
-      <File FileName="gtk-gui\gui.stetic" Line="1" Column="1" />
+      <File FileName="gtk-gui\gui.stetic" Line="142" Column="41" />
       <File FileName="FrustrumCuller.cs" Line="1" Column="1" />
       <File FileName="gtk-gui\MainWindow.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="C:\Julian\Projekty\GitHub\glompVR\MainWindow.cs" line="487" column="18" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>
