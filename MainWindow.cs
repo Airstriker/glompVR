@@ -505,7 +505,7 @@ public partial class MainWindow : Gtk.Window {
         camTransitionVector = (camTransitionTarget - camTransitionStart) * frameDelta * 4.0f;
         targetDistance = (camTransitionTarget - cam.Position).Length;
         nextTargetDistance = (camTransitionTarget - (camTransitionVector + cam.Position)).Length;
-        if( ((nextTargetDistance > targetDistance) && !transitionTargetUpdated) || targetDistance < 0.3f) {
+		if( ((nextTargetDistance > targetDistance) && !transitionTargetUpdated) || targetDistance < 0.1f) {
             inTransition = false;
             if (inVerticalTransition) {
                 slices.ActiveSlice.ShowLabels();
@@ -521,7 +521,7 @@ public partial class MainWindow : Gtk.Window {
             UpdateDetailsBox();
 	
         } else{
-            cam.Move((camTransitionTarget - camTransitionStart) * frameDelta * 4.0f);
+			cam.Move(camTransitionVector);
             if(heightCueEnabled) {
                 SetColourForCamHeight();
             }
@@ -689,8 +689,7 @@ public partial class MainWindow : Gtk.Window {
     private void MoveRight() {
         if (slices.ActiveSlice.MoveCarat(1,0)) {
             ActivateTransition();
-            ChangedActive();
-            
+            ChangedActive();  
         }
     }
     
