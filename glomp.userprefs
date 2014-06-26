@@ -1,21 +1,21 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="MainWindow.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="SkyBox.cs">
     <Files>
-      <File FileName="SliceManager.cs" Line="235" Column="26" />
-      <File FileName="FileSlice.cs" Line="528" Column="29" />
+      <File FileName="SliceManager.cs" Line="1" Column="1" />
+      <File FileName="FileSlice.cs" Line="572" Column="14" />
       <File FileName="NodeManager.cs" Line="1" Column="1" />
-      <File FileName="FileNode.cs" Line="508" Column="44" />
-      <File FileName="MainWindow.cs" Line="529" Column="11" />
+      <File FileName="FileNode.cs" Line="430" Column="22" />
+      <File FileName="MainWindow.cs" Line="1" Column="1" />
       <File FileName="Util.cs" Line="1" Column="1" />
       <File FileName="Camera.cs" Line="1" Column="1" />
-      <File FileName="SkyBox.cs" Line="1" Column="1" />
+      <File FileName="SkyBox.cs" Line="221" Column="12" />
       <File FileName="Main.cs" Line="1" Column="1" />
-      <File FileName="SceneNode.cs" Line="64" Column="9" />
+      <File FileName="SceneNode.cs" Line="1" Column="1" />
       <File FileName="glomp.csproj" Line="1" Column="1" />
       <File FileName="TextureManager.cs" Line="1" Column="1" />
       <File FileName="Mouse.cs" Line="1" Column="1" />
-      <File FileName="gtk-gui\gui.stetic" Line="142" Column="41" />
+      <File FileName="gtk-gui\gui.stetic" Line="1" Column="1" />
       <File FileName="FrustrumCuller.cs" Line="1" Column="1" />
       <File FileName="gtk-gui\MainWindow.cs" Line="1" Column="1" />
     </Files>

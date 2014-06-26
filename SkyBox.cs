@@ -8,6 +8,8 @@ namespace glomp
 	{
 		private float mSize;
 
+		private int displayList; //DisplayList for SkyBox
+
 		/* TEXTURES  */
 		private static int[] skyBoxTexture = new int[6];
 
@@ -37,6 +39,8 @@ namespace glomp
 				System.Console.WriteLine("Textures array needs to have exactly 6 elements!");
 				return;
 			}
+
+			GenerateDisplayList();
 		}
 
 		//Ordinary skyboxes have lightening disabled but this is rather a box than skybox ;)
@@ -158,6 +162,33 @@ namespace glomp
 
 			this.enableLights (ref frameDelta);
 
+			///////////////////////////////////////////////////////////////////////////////////////////////////
+			GL.CallList(displayList); //Use pre-generated DisplayList
+			///////////////////////////////////////////////////////////////////////////////////////////////////
+
+			this.disableLights ();
+
+			GL.PopMatrix ();
+
+			/*
+			GL.PopMatrix(); //Restoring Projection matrix
+
+			GL.MatrixMode (MatrixMode.Modelview);
+			GL.PopMatrix(); //Restoring Modelview matrix
+			*/
+
+			//GL.DepthMask(true);
+			//GL.Enable(EnableCap.Lighting);
+			GL.Enable(EnableCap.DepthTest);
+			GL.Disable(EnableCap.Texture2D);
+		}
+	
+
+		private int GenerateDisplayList() {
+			displayList = GL.GenLists(1);
+
+			GL.NewList(displayList, ListMode.Compile); // start compiling display list
+
 			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			//TO RENDER TEXTURES ON THE INNER SIDE OF THE CUBE, WE MUST DRAW THE VERTEXes COUNTER CLOCK-WISE !!!!!!
 			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -245,21 +276,9 @@ namespace glomp
 			GL.TexCoord2(0.0f, numberOfTextureRepeats); GL.Vertex3( -mSize/2f, -mSize/2f,  mSize/2f );
 			GL.End();
 
-			this.disableLights ();
+			GL.EndList();                // Finish display list 
 
-			GL.PopMatrix ();
-
-			/*
-			GL.PopMatrix(); //Restoring Projection matrix
-
-			GL.MatrixMode (MatrixMode.Modelview);
-			GL.PopMatrix(); //Restoring Modelview matrix
-			*/
-
-			//GL.DepthMask(true);
-			//GL.Enable(EnableCap.Lighting);
-			GL.Enable(EnableCap.DepthTest);
-			GL.Disable(EnableCap.Texture2D);
+			return displayList;       
 		}
 	}
 }
