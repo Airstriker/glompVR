@@ -51,7 +51,7 @@ namespace glomp {
 		private int numFiles = 0;
         private String path;
         private int sliceHeight;
-        private float alpha = 0.5f;
+		private float alpha = 0.5f;
         private bool isDimmed = false;
         private int lastLetterPosition = -1;
         private String lastLetter = "";
@@ -187,7 +187,12 @@ namespace glomp {
 
 
 		public void FillFileSliceWithDirectoriesAndFiles () {
-			Trace.WriteLine ("FillFileSlice");
+
+			while (parentWindow.InTransition) {
+				//SIMPLY WAIT TILL THE END OF TRANSITION ANIMATION
+				//to eliminate annoying lags (due to disk operations during transition animation)
+			}
+
 			fillingFileSliceInProgress = true;
             // set up storage
 			GetFileNodesCollectionFromLocation(path);
@@ -571,7 +576,7 @@ namespace glomp {
                 return false;
             }
             
-            fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]].Active = false;
+			fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]].Active = false;
             activeBox[X] += xMove;
             activeBox[Y] += yMove;
             toNode.Active = true;
