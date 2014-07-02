@@ -33,6 +33,44 @@ public partial class MainWindow : Gtk.Window {
 		"..\\..\\resources\\skybox_down.bmp"
 	};
 
+	/*  File Nodes Textures  */
+	String[] fileNodeTextures = {
+		"..\\..\\resources\\towers2-1.png",
+		"..\\..\\resources\\towers2-2.png",
+		"..\\..\\resources\\towers2-3.png",
+		"..\\..\\resources\\towers2-4.png",
+		"..\\..\\resources\\towers2-5.png",
+		"..\\..\\resources\\towers2-6.png",
+		"..\\..\\resources\\towers2-7.png",
+		"..\\..\\resources\\towers2-8.png"
+	};
+
+	/*  Directory Nodes Textures  */
+	String[] dirNodeTextures = {
+		"..\\..\\resources\\towers2-1.png",
+		"..\\..\\resources\\towers2-2.png",
+		"..\\..\\resources\\towers2-3.png",
+		"..\\..\\resources\\towers2-4.png",
+		"..\\..\\resources\\towers2-5.png",
+		"..\\..\\resources\\towers2-6.png",
+		"..\\..\\resources\\towers2-7.png",
+		"..\\..\\resources\\towers2-8.png"
+	};
+
+	/*  Drive Nodes Textures  */
+	String[] driveNodeTextures = {
+		"..\\..\\resources\\towers2-1.png",
+		"..\\..\\resources\\towers2-2.png",
+		"..\\..\\resources\\towers2-3.png",
+		"..\\..\\resources\\towers2-4.png",
+		"..\\..\\resources\\towers2-5.png",
+		"..\\..\\resources\\towers2-6.png",
+		"..\\..\\resources\\towers2-7.png",
+		"..\\..\\resources\\towers2-8.png"
+	};
+
+
+
 	//SkyBox object
 	private SkyBox skyBox;
 
@@ -99,7 +137,12 @@ public partial class MainWindow : Gtk.Window {
     private LinkedList<SliceManager> sceneList = new LinkedList<SliceManager>();
 	private SliceManager slices;
     private LinkedList<FileNode> selectedNodes = new LinkedList<FileNode>();
-   
+
+	public bool InTransition {
+		get { return inTransition; }
+		set { inTransition = value; }
+	}
+
     
     /* Constructor */
     public MainWindow() : base(Gtk.WindowType.Toplevel) {
@@ -191,13 +234,16 @@ public partial class MainWindow : Gtk.Window {
 			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 0; //vsync disabled
 		}
         initted = true;
-		Console.WriteLine(OpenTK.Graphics.GraphicsContext.CurrentContext.GraphicsMode.ToString());
+		Trace.WriteLine(OpenTK.Graphics.GraphicsContext.CurrentContext.GraphicsMode.ToString());
     }
     
 
     private void InitScene() {
         
         slices = new SliceManager(this);
+		NodeManager.LoadNodesTextures (NodeManager.FILE_NODE, fileNodeTextures);
+		NodeManager.LoadNodesTextures (NodeManager.DIR_NODE, dirNodeTextures);
+		NodeManager.LoadNodesTextures (NodeManager.DRIVE_NODE, driveNodeTextures);
 		NodeManager.GenerateDisplayLists ();
         slices.Reset(START_PATH);
         

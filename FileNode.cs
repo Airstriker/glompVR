@@ -14,6 +14,8 @@ namespace glomp {
         private readonly int textureWidth = 256;
         private readonly int textureHeight = 128;
         private int textSize = 20;
+
+		private int currentFrame = 0;
         
         private Bitmap textLabelBmp = null;
         
@@ -22,7 +24,7 @@ namespace glomp {
         private static readonly float[] fileColour = {0.2f, 0.6f, 0.6f};
         private static readonly float[] roColour = {0.1f, 0.1f, 0.1f};
         private static readonly float[] activeColour = {1.0f, 0.5f, 0.5f};
-        private static readonly float[] dirColour = {0.3f, 0.5f, 1.0f};
+		private static readonly float[] dirColour = {0.4f, 1.0f, 0.8f}; //{0.3f, 0.5f, 1.0f};
         private static readonly float[] THUMB_COLOUR = {1.0f, 1.0f, 1.0f};
         private static readonly float ACTIVE_SCALE = 1.3f;
         
@@ -384,7 +386,7 @@ namespace glomp {
             MoveIntoPosition(true);
             
             if(isDirectory) {
-                currentColour = dirColour;
+				currentColour = dirColour; //MODIFYING TEXTURE COLOR HERE!
                 GL.Translate(0f, dirHeight-1.0f, 0f);
                 GL.Scale(1f, dirHeight, 1f);
             } else {
@@ -409,7 +411,7 @@ namespace glomp {
                 
             
             if(isActive) {
-                if(!IsDirectory) {
+				if(!isDirectory) {
                     GL.Scale(ACTIVE_SCALE, ACTIVE_SCALE, ACTIVE_SCALE);
                     GL.Translate(Vector3.UnitY * 0.5f);
                 } 
@@ -496,33 +498,41 @@ namespace glomp {
         }
         
         private void PreRenderBox() {
-            GL.PushMatrix();
-            if(isThumbnailed) {
-				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
-				GL.PushAttrib(AttribMask.EnableBit);
-                GL.Enable(EnableCap.Texture2D);
-                GL.BindTexture(TextureTarget.Texture2D, thumbTextureIndex);
-            } else if(isDirFaded) {
-				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
-				GL.PushAttrib(AttribMask.EnableBit);
-                GL.Enable(EnableCap.Blend);
-				GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
-			} else if(isNodeActivated) {
-				//GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
-				GL.PushAttrib(AttribMask.EnableBit);
-				GL.Enable(EnableCap.Blend);
-				GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
+			GL.PushMatrix();
+			GL.PushAttrib (AttribMask.EnableBit); //Remembering attributes
+			if (isThumbnailed) {
+				GL.Enable (EnableCap.Texture2D);
+				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);
+			} else if (isDirectory) {
+				GL.Enable (EnableCap.Texture2D);
+				GL.Enable (EnableCap.Blend);     // Turn Blending On
+				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
+				if (isDirFaded || isNodeActivated || isDimmed) {
+					GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Very transparent
+				} else {
+					GL.BlendFunc (BlendingFactorSrc.One, BlendingFactorDest.One); //Better visibility than GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
+				}
+				Random rnd = new Random ();
+				int random = rnd.Next (0, 3); // creates a random number in the given range
+				currentFrame = (currentFrame + 1 + random);
+				if (currentFrame / 100 > 7)
+					currentFrame = 0;
+				GL.BindTexture (TextureTarget.Texture2D, NodeManager.nodeTextures [NodeManager.DIR_NODE] [currentFrame / 100]); //APPLY TEXTURE TO DIRECTORIES!
+			} else {
+				//ordinary files
+				GL.Enable (EnableCap.Blend);     // Turn Blending On
+				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
+				if (isDimmed) {
+					GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Very transparent
+				} else {
+					GL.BlendFunc (BlendingFactorSrc.One, BlendingFactorDest.One); //Better visibility than GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
+				}
 			}
         }
         
         private void PostRenderBox() {
-            GL.PopMatrix();
-            if(isThumbnailed || isDirFaded) {
-                GL.PopAttrib();
-            }
-			if (isNodeActivated) {
-				GL.PopAttrib();
-			}
+			GL.PopAttrib(); // Due to changes in attributes in PreRenderBox
+			GL.PopMatrix(); // Due to PushMatrix in PreRenderBox
         }
         
         public static void SetTextState(bool dimmed) {

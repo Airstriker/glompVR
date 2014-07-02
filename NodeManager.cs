@@ -11,7 +11,10 @@ namespace glomp {
     public class NodeManager {
         
 		public static int[] displayLists = new int[3];
-        
+
+		public static readonly int numberOfFileNodeTypes = 3;
+		public static int[][] nodeTextures = new int[numberOfFileNodeTypes][]; //array of arrays
+
 		public static readonly int FILE_NODE = 0;
 		public static readonly int DIR_NODE = 1;
 		public static readonly int DRIVE_NODE = 2;
@@ -22,10 +25,19 @@ namespace glomp {
         public NodeManager() {
         }
 
+		public static void LoadNodesTextures(int fileNodeType, String[] textures) {
+			//Creates a map of textures (a couple of textures per each file node type)
+			nodeTextures [fileNodeType] = new int[textures.Length];
+			int i = 0;
+			foreach (String texture in textures) {
+				nodeTextures[fileNodeType][i++] = TextureManager.LoadTexture(texture);
+			}
+		}
+
 		public static void GenerateDisplayLists() {
-			displayLists[DRIVE_NODE] = GenerateDisplayList(DRIVE_NODE);
-			displayLists[DIR_NODE] = GenerateDisplayList(DIR_NODE);
 			displayLists[FILE_NODE] = GenerateDisplayList(FILE_NODE);
+			displayLists[DIR_NODE] = GenerateDisplayList(DIR_NODE);
+			displayLists[DRIVE_NODE] = GenerateDisplayList(DRIVE_NODE);
 		}
 
 		public static string GetMIMEDescription(string fileExtension) //fileExtension with dot "."
@@ -68,8 +80,15 @@ namespace glomp {
                 GL.NewList(displayList, ListMode.Compile); // start compiling display list
                 //GL.Color3(boxColour[0], boxColour[1], boxColour[2]);
                 //GL.Scale(BOX_SCALE, BOX_SCALE, BOX_SCALE);
+
                 GL.Begin(BeginMode.Quads);          // start drawing quads
                 
+				// Bottom Face
+				GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
                 // Front Face
                 GL.Normal3( 0.0f, 0.0f, 1.0f);      // Normal Facing Forward
                 GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
@@ -88,12 +107,6 @@ namespace glomp {
                 GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f,  0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
                 GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f,  0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
                 GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  0.8f, -0.8f);  // Top Right Of The Texture and Quad
-                // Bottom Face
-                GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
                 // Right face
                 GL.Normal3( 1.0f, 0.0f, 0.0f);      // Normal Facing Right
                 GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
@@ -118,44 +131,74 @@ namespace glomp {
                 GL.NewList(displayList, ListMode.Compile); // start compiling display list
                 //GL.Color3(boxColour[0], boxColour[1], boxColour[2]);
                 //GL.Scale(BOX_SCALE, BOX_SCALE, BOX_SCALE);
+
+				//GL.BindTexture(TextureTarget.Texture2D, nodeTextures[DIR_NODE]); //Putting textures in a display list will not make them run faster! ( see point 16.090 at http://dmi.uib.es/~josemaria/files/OpenGLFAQ/displaylist.htm )
+
+				//To enable smooth shading uncomment the normals that are commented now and vice versa
+				//Smooth shading is enabled at the moment, because with textures it does look better than flat shading
+
                 GL.Begin(BeginMode.Quads);          // start drawing quads
                 
-                // Front Face
-                GL.Normal3( 0.0f, 0.0f, 1.0f);      // Normal Facing Forward
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
-                // Back Face
-                GL.Normal3( 0.0f, 0.0f,-1.0f);      // Normal Facing Away
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
-                // Top Face
-                GL.Normal3( 0.0f, 1.0f, 0.0f);      // Normal Facing Up
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Bottom Right Of The Texture and Quad
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Bottom Left Of The Texture and Quad
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
-                // Bottom Face
-                GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
-                // Right face
-                GL.Normal3( 1.0f, 0.0f, 0.0f);      // Normal Facing Right
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
-                // Left Face
-                GL.Normal3(-1.0f, 0.0f, 0.0f);      // Normal Facing Left
-                GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
-                GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
-                GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
+				// Bottom Face
+				//GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
+				GL.Normal3( -1.0f,-1.0f, -1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
+				GL.Normal3( 1.0f,-1.0f, -1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
+				GL.Normal3( 1.0f,-1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.Normal3( -1.0f,-1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
+				// Front Face
+				//GL.Normal3( 0.0f, 0.0f, 1.0f);      // Normal Facing Forward
+				GL.Normal3( -1.0f, -1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
+				GL.Normal3( 1.0f, -1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
+				GL.Normal3( -1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
+				// Back Face
+				//GL.Normal3( 0.0f, 0.0f,-1.0f);      // Normal Facing Away
+				GL.Normal3( -1.0f, -1.0f,-1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
+				GL.Normal3( -1.0f, 1.0f,-1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
+				GL.Normal3( 1.0f, 1.0f,-1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
+				GL.Normal3( 1.0f, -1.0f,-1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
+				// Top Face
+				//GL.Normal3( 0.0f, 1.0f, 0.0f);      // Normal Facing Up
+				GL.Normal3( -1.0f, 1.0f, -1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
+				GL.Normal3( -1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Bottom Right Of The Texture and Quad
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.Normal3( 1.0f, 1.0f, -1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
+				// Right face
+				//GL.Normal3( 1.0f, 0.0f, 0.0f);      // Normal Facing Right
+				GL.Normal3( 1.0f, -1.0f, -1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
+				GL.Normal3( 1.0f, 1.0f, -1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
+				GL.Normal3( 1.0f, -1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				// Left Face
+				//GL.Normal3(-1.0f, 0.0f, 0.0f);      // Normal Facing Left
+				GL.Normal3(-1.0f, -1.0f, -1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
+				GL.Normal3(-1.0f, -1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
+				GL.Normal3(-1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
+				GL.Normal3(-1.0f, 1.0f, -1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
                 
                 GL.End();                    // Done Drawing Quads
                 
@@ -168,70 +211,73 @@ namespace glomp {
 				GL.NewList(displayList, ListMode.Compile); // start compiling display list
 				//GL.Color3(boxColour[0], boxColour[1], boxColour[2]);
 				//GL.Scale(BOX_SCALE, BOX_SCALE, BOX_SCALE);
+
+				//GL.BindTexture(TextureTarget.Texture2D, nodeTextures[DRIVE_NODE]); //Putting textures in a display list will not make them run faster! ( see point 16.090 at http://dmi.uib.es/~josemaria/files/OpenGLFAQ/displaylist.htm )
+
 				GL.Begin(BeginMode.Quads);          // start drawing quads
 
 				//To enable smooth shading uncomment the normals that are commented now and vice versa
-				//Smooth shading is disabled at the moment, because without textures it doesn't look better that flat shading
+				//Smooth shading is enabled at the moment, because with textures it does look better than flat shading
 
+				// Bottom Face
+				//GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
+				GL.Normal3( -1.0f,-1.0f, -1.0f);
+				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
+				GL.Normal3( 1.0f,-1.0f, -1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
+				GL.Normal3( 1.0f,-1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
+				GL.Normal3( -1.0f,-1.0f, 1.0f);
+				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
 				// Front Face
-				GL.Normal3( 0.0f, 0.0f, 1.0f);      // Normal Facing Forward
-				//GL.Normal3( -1.0f, -1.0f, 1.0f);
+				//GL.Normal3( 0.0f, 0.0f, 1.0f);      // Normal Facing Forward
+				GL.Normal3( -1.0f, -1.0f, 1.0f);
 				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
-				//GL.Normal3( 1.0f, -1.0f, 1.0f);
+				GL.Normal3( 1.0f, -1.0f, 1.0f);
 				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
-				//GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
 				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
-				//GL.Normal3( -1.0f, 1.0f, 1.0f);
+				GL.Normal3( -1.0f, 1.0f, 1.0f);
 				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
 				// Back Face
-				GL.Normal3( 0.0f, 0.0f,-1.0f);      // Normal Facing Away
-				//GL.Normal3( -1.0f, -1.0f,-1.0f);
+				//GL.Normal3( 0.0f, 0.0f,-1.0f);      // Normal Facing Away
+				GL.Normal3( -1.0f, -1.0f,-1.0f);
 				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
-				//GL.Normal3( -1.0f, 1.0f,-1.0f);
+				GL.Normal3( -1.0f, 1.0f,-1.0f);
 				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
-				//GL.Normal3( 1.0f, 1.0f,-1.0f);
+				GL.Normal3( 1.0f, 1.0f,-1.0f);
 				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
-				//GL.Normal3( 1.0f, -1.0f,-1.0f);
+				GL.Normal3( 1.0f, -1.0f,-1.0f);
 				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
 				// Top Face
-				GL.Normal3( 0.0f, 1.0f, 0.0f);      // Normal Facing Up
-				//GL.Normal3( -1.0f, 1.0f, -1.0f);
+				//GL.Normal3( 0.0f, 1.0f, 0.0f);      // Normal Facing Up
+				GL.Normal3( -1.0f, 1.0f, -1.0f);
 				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
-				//GL.Normal3( -1.0f, 1.0f, 1.0f);
+				GL.Normal3( -1.0f, 1.0f, 1.0f);
 				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Bottom Right Of The Texture and Quad
-				//GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
 				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Bottom Left Of The Texture and Quad
-				//GL.Normal3( 1.0f, 1.0f, -1.0f);
+				GL.Normal3( 1.0f, 1.0f, -1.0f);
 				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
-				// Bottom Face
-				GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
-				//GL.Normal3( -1.0f,-1.0f, -1.0f);
-				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Top Right Of The Texture and Quad
-				//GL.Normal3( 1.0f,-1.0f, -1.0f);
-				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Top Left Of The Texture and Quad
-				//GL.Normal3( 1.0f,-1.0f, 1.0f);
-				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
-				//GL.Normal3( -1.0f,-1.0f, 1.0f);
-				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
 				// Right face
-				GL.Normal3( 1.0f, 0.0f, 0.0f);      // Normal Facing Right
-				//GL.Normal3( 1.0f, -1.0f, -1.0f);
+				//GL.Normal3( 1.0f, 0.0f, 0.0f);      // Normal Facing Right
+				GL.Normal3( 1.0f, -1.0f, -1.0f);
 				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f, -0.8f);  // Bottom Right Of The Texture and Quad
-				//GL.Normal3( 1.0f, 1.0f, -1.0f);
+				GL.Normal3( 1.0f, 1.0f, -1.0f);
 				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight, -0.8f);  // Top Right Of The Texture and Quad
-				//GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
 				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( 0.8f,  dirHeight,  0.8f);  // Top Left Of The Texture and Quad
-				//GL.Normal3( 1.0f, -1.0f, 1.0f);
+				GL.Normal3( 1.0f, -1.0f, 1.0f);
 				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3( 0.8f, -0.8f,  0.8f);  // Bottom Left Of The Texture and Quad
 				// Left Face
-				GL.Normal3(-1.0f, 0.0f, 0.0f);      // Normal Facing Left
-				//GL.Normal3(-1.0f, -1.0f, -1.0f);
+				//GL.Normal3(-1.0f, 0.0f, 0.0f);      // Normal Facing Left
+				GL.Normal3(-1.0f, -1.0f, -1.0f);
 				GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f, -0.8f);  // Bottom Left Of The Texture and Quad
-				//GL.Normal3(-1.0f, -1.0f, 1.0f);
+				GL.Normal3(-1.0f, -1.0f, 1.0f);
 				GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(-0.8f, -0.8f,  0.8f);  // Bottom Right Of The Texture and Quad
-				//GL.Normal3(-1.0f, 1.0f, 1.0f);
+				GL.Normal3(-1.0f, 1.0f, 1.0f);
 				GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight,  0.8f);  // Top Right Of The Texture and Quad
-				//GL.Normal3(-1.0f, 1.0f, -1.0f);
+				GL.Normal3(-1.0f, 1.0f, -1.0f);
 				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(-0.8f,  dirHeight, -0.8f);  // Top Left Of The Texture and Quad
 
 				GL.End();                    // Done Drawing Quads
