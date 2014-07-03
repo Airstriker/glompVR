@@ -310,7 +310,10 @@ public partial class MainWindow : Gtk.Window {
 		// Clearing all 
 		GL.Fog(FogParameter.FogColor, backgroundColour);
 		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
-		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+		//If you're drawing a scene that covers the whole screen each frame (for example when using skyBox), only clear depth buffer but not the color buffer.
+		//GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+		GL.Clear(ClearBufferMask.DepthBufferBit);
 
 		// Looking in the right direction
 		Matrix4 modelview = Matrix4.LookAt(cam.Eye, cam.Target, cam.Up);
