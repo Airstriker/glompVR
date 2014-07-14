@@ -198,9 +198,10 @@ namespace glomp
 			// Smooth shading enabled - every vertex has it's own normal. Looks a lot better than flat shading!
 			// When a quad is being drawn, it takes a weighted average of the normals at the vertices to determine the normals at different points on the quad
 
+			GL.Begin(PrimitiveType.Quads);
+
 			// Render the front quad
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxTexture[SKY_FRONT]);
-			GL.Begin(BeginMode.Quads);
 			GL.Normal3( -1.0f, -1.0f, 1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, 0.0f); GL.Vertex3(  mSize/2f, mSize/2f, -mSize/2f );
 			GL.Normal3( 1.0f, -1.0f, 1.0f);
@@ -209,11 +210,9 @@ namespace glomp
 			GL.TexCoord2(0.0f, numberOfTextureRepeats); GL.Vertex3( -mSize/2f,  -mSize/2f, -mSize/2f );
 			GL.Normal3( -1.0f, 1.0f, 1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3(  mSize/2f,  -mSize/2f, -mSize/2f );
-			GL.End();
 
 			// Render the left quad
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxTexture[SKY_LEFT]);
-			GL.Begin(BeginMode.Quads);
 			GL.Normal3( 1.0f, -1.0f, -1.0f);
 			GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( -mSize/2f, mSize/2f, mSize/2f );
 			GL.Normal3( 1.0f, 1.0f, -1.0f);
@@ -222,11 +221,9 @@ namespace glomp
 			GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3( -mSize/2f, -mSize/2f, -mSize/2f );
 			GL.Normal3( 1.0f, -1.0f, 1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, 0.0f); GL.Vertex3( -mSize/2f, mSize/2f, -mSize/2f );
-			GL.End();
 
 			// Render the back quad
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxTexture[SKY_BACK]);
-			GL.Begin(BeginMode.Quads);
 			GL.Normal3( -1.0f, -1.0f,-1.0f);
 			GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( mSize/2f, mSize/2f,  mSize/2f );
 			GL.Normal3( -1.0f, 1.0f,-1.0f);
@@ -235,11 +232,9 @@ namespace glomp
 			GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3(  -mSize/2f,  -mSize/2f,  mSize/2f );
 			GL.Normal3( 1.0f, -1.0f,-1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, 0.0f); GL.Vertex3(  -mSize/2f, mSize/2f,  mSize/2f );
-			GL.End();
 
 			// Render the right quad
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxTexture[SKY_RIGHT]);
-			GL.Begin(BeginMode.Quads);
 			GL.Normal3( -1.0f, -1.0f, 1.0f);
 			GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( mSize/2f, mSize/2f, -mSize/2f );
 			GL.Normal3( -1.0f, 1.0f, 1.0f);
@@ -248,11 +243,9 @@ namespace glomp
 			GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3( mSize/2f,  -mSize/2f,  mSize/2f );
 			GL.Normal3( -1.0f, -1.0f,-1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, 0.0f); GL.Vertex3( mSize/2f, mSize/2f,  mSize/2f );
-			GL.End();
 
 			// Render the top quad
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxTexture[SKY_UP]);
-			GL.Begin(BeginMode.Quads);
 			GL.Normal3( -1.0f, -1.0f, -1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, 0.0f); GL.Vertex3( mSize/2f,  mSize/2f, mSize/2f );
 			GL.Normal3( 1.0f, -1.0f, -1.0f);
@@ -261,11 +254,9 @@ namespace glomp
 			GL.TexCoord2(0.0f, numberOfTextureRepeats); GL.Vertex3(  -mSize/2f,  mSize/2f,  -mSize/2f );
 			GL.Normal3( -1.0f, -1.0f, 1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3(  mSize/2f,  mSize/2f, -mSize/2f );
-			GL.End();
 
 			// Render the bottom quad
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxTexture[SKY_DOWN]);
-			GL.Begin(BeginMode.Quads);
 			GL.Normal3( -1.0f, 1.0f, -1.0f);
 			GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3( mSize/2f, -mSize/2f, mSize/2f );
 			GL.Normal3( -1.0f, 1.0f, 1.0f);
@@ -274,6 +265,7 @@ namespace glomp
 			GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(  -mSize/2f, -mSize/2f,  -mSize/2f );
 			GL.Normal3( 1.0f, 1.0f, -1.0f);
 			GL.TexCoord2(0.0f, numberOfTextureRepeats); GL.Vertex3( -mSize/2f, -mSize/2f,  mSize/2f );
+
 			GL.End();
 
 			GL.EndList();                // Finish display list 

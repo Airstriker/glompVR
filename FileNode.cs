@@ -466,7 +466,7 @@ namespace glomp {
 					GL.Color4(0.4f, 1f, 0.8f, parentSlice.Alpha);
                 }
 
-                GL.Begin(BeginMode.Quads);
+				GL.Begin(PrimitiveType.Quads);
                 GL.TexCoord2(1.0f, 1.0f); 
                 GL.Vertex3(-5.1f, -1.0f,  0.0f);  // Bottom Right Of The Texture and Quad
                 GL.TexCoord2(0.0f, 1.0f); 

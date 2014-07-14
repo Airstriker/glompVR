@@ -81,7 +81,7 @@ namespace glomp {
                 //GL.Color3(boxColour[0], boxColour[1], boxColour[2]);
                 //GL.Scale(BOX_SCALE, BOX_SCALE, BOX_SCALE);
 
-                GL.Begin(BeginMode.Quads);          // start drawing quads
+				GL.Begin(PrimitiveType.Quads);          // start drawing quads
                 
 				// Bottom Face
 				GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
@@ -137,7 +137,7 @@ namespace glomp {
 				//To enable smooth shading uncomment the normals that are commented now and vice versa
 				//Smooth shading is enabled at the moment, because with textures it does look better than flat shading
 
-                GL.Begin(BeginMode.Quads);          // start drawing quads
+				GL.Begin(PrimitiveType.Quads);          // start drawing quads
                 
 				// Bottom Face
 				//GL.Normal3( 0.0f,-1.0f, 0.0f);      // Normal Facing Down
@@ -214,7 +214,7 @@ namespace glomp {
 
 				//GL.BindTexture(TextureTarget.Texture2D, nodeTextures[DRIVE_NODE]); //Putting textures in a display list will not make them run faster! ( see point 16.090 at http://dmi.uib.es/~josemaria/files/OpenGLFAQ/displaylist.htm )
 
-				GL.Begin(BeginMode.Quads);          // start drawing quads
+				GL.Begin(PrimitiveType.Quads);          // start drawing quads
 
 				//To enable smooth shading uncomment the normals that are commented now and vice versa
 				//Smooth shading is enabled at the moment, because with textures it does look better than flat shading
