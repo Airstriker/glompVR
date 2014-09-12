@@ -629,7 +629,11 @@ public partial class MainWindow : Gtk.Window {
     
     private void ChangedActive() {
         slices.ActiveSlice.ResetVisible();
-        if(slices.ActiveSlice.GetActiveNode().IsDirectory) {
+        
+		/*
+		//Uncomment this if you want all the Directories to fade when changing active node to file.
+
+		if(slices.ActiveSlice.GetActiveNode().IsDirectory) {
             if(!viewingDir) {
                 viewingDir = true;
                 slices.ActiveSlice.FadeDirectories(false);
@@ -643,6 +647,8 @@ public partial class MainWindow : Gtk.Window {
                 Console.WriteLine("Fading");
             }
         }
+        */
+
         transitionTargetUpdated = true;
         
         statusbar6.Pop(0);
