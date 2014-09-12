@@ -41,8 +41,9 @@ namespace glomp {
 		public static readonly int DRIVE_NODE = 2;
         
         public Vector3 camOffset = new Vector3(5.0f, -12.0f, 32.0f);
-        
-        
+
+		int texture; //TODO delete if not needed
+
         private int gridWidth;
         private int gridHeight;
         private int[] activeBox = {0,0};
@@ -137,6 +138,8 @@ namespace glomp {
 			sliceHeight = _sliceHeight;
 			parentWindow = parent;
 			fileSliceFilled = false;
+
+			texture = TextureManager.LoadTexture("..\\..\\resources\\skybox_down.bmp"); //TODO delete if not needed
 		}
 
 		public void FillFileSliceWithDrives () {
@@ -516,17 +519,43 @@ namespace glomp {
                 sliceY = this.position.Y;
                 sliceZ = this.position.Z;
                 cullCount = 0;
-                
-                GL.PushMatrix();
+
+				/*
+				// GROUND PLANE
+				GL.PushMatrix();
+
+				GL.Disable (EnableCap.DepthTest);
+				GL.Enable (EnableCap.Texture2D);
+				GL.BindTexture(TextureTarget.Texture2D, texture);
+				GL.Begin(PrimitiveType.Quads);
+				float numberOfTextureRepeats = 30.0f;
+				float mSize = 500.0f;
+				GL.Normal3( -1.0f, 1.0f, -1.0f);
+				float cameraPositionZ = parentWindow.GetCamera().Position.Z;
+				float cameraPositionX = parentWindow.GetCamera().Position.X;
+				GL.TexCoord2(numberOfTextureRepeats, numberOfTextureRepeats); GL.Vertex3( (float)(cameraPositionX + mSize/2f), sliceY, (cameraPositionZ + mSize/2f));
+				GL.Normal3( -1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(numberOfTextureRepeats, 0.0f); GL.Vertex3(  (float)(cameraPositionX + mSize/2f), sliceY, (cameraPositionZ - mSize/2f));
+				GL.Normal3( 1.0f, 1.0f, 1.0f);
+				GL.TexCoord2(0.0f, 0.0f); GL.Vertex3( (float)(cameraPositionX -mSize/2f), sliceY, (cameraPositionZ - mSize/2f));
+				GL.Normal3( 1.0f, 1.0f, -1.0f);
+				GL.TexCoord2(0.0f, numberOfTextureRepeats); GL.Vertex3( (float)(cameraPositionX -mSize/2f), sliceY,  (cameraPositionZ + mSize/2f));
+				GL.Disable (EnableCap.Texture2D);
+				GL.Enable(EnableCap.DepthTest);
+				GL.End ();
+
+				GL.PopMatrix();
+				*/
+
+				GL.PushMatrix ();
                 MoveIntoPosition(false);
                 FileNode.SetBoxState(isDimmed);
                 for(int i = fileNodes.Length-1; i >= 0; i--) {
                     float nodeZ = sliceZ + fileNodes[i].Position.Z;
-                    float nodeX = sliceX + fileNodes[i].Position.X - 2.1f;
+					float nodeX = sliceX + fileNodes [i].Position.X - 2.1f;
                     float nodeY = sliceY + fileNodes[i].Position.Y;
-                    if( (nodeZ > parentWindow.GetCamera().Position.Z) && 
+					if( /*(nodeZ > parentWindow.GetCamera().Position.Z) && */ //If you don't want to show all the boxes that are behind you - uncomment this line; For VR we need every box to be visible
                        (culler.isBoxVisible(nodeX, nodeY, nodeZ, 3f, 8f)) ) {
-                        
                         
                         fileNodes[i].culled = false;
 						fileNodes[i].DrawBox(i);	//the main boxes drawing method
