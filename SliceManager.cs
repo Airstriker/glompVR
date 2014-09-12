@@ -219,7 +219,6 @@ namespace glomp {
                 slices.Last.Value.Destroy();
                 slices.RemoveLast();
             }
-            
         }
        
         

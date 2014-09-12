@@ -1,6 +1,7 @@
 ﻿using System;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
+using System.Drawing;
 
 namespace glomp
 {
@@ -156,6 +157,7 @@ namespace glomp
 			//Rotates, making sure it rotates around the center of the cube
 
 			GL.PushMatrix ();
+
 			//GL.Translate(0.5f, 1.0f, 0.0f);
 			GL.Rotate(spotLightDirectionAngle * 5, 1.0f, 1.0f, 1.0f);
 			//GL.Translate(-0.5f, -1.0f, 0.0f);
@@ -267,6 +269,31 @@ namespace glomp
 			GL.TexCoord2(0.0f, numberOfTextureRepeats); GL.Vertex3( -mSize/2f, -mSize/2f,  mSize/2f );
 
 			GL.End();
+
+			/*
+			//Draw 3D grid in the SkyBox
+			GL.Begin(PrimitiveType.Lines);
+			GL.Disable (EnableCap.Texture2D);
+			for (int j = -100; j <= 100;) {
+				for (int i = -100; i <= 100;) {
+
+					GL.Color4 (Color.AntiqueWhite);
+
+					GL.Vertex3 ((float)i, -100.0f, (float)j);
+					GL.Vertex3 ((float)i, 100.0f, (float)j);
+
+					GL.Vertex3 ((float)i, (float)j, -100.0f);
+					GL.Vertex3 ((float)i, (float)j, 100.0f);
+
+					GL.Vertex3 (-100.0f, (float)j, (float)i);
+					GL.Vertex3 (100.0f, (float)j, (float)i);
+
+					i = i + 10;
+				}
+				j = j + 10;
+			}
+			GL.End();
+			*/
 
 			GL.EndList();                // Finish display list 
 
