@@ -5,3 +5,5 @@ Compile with Xamarin Studio 5.1 on Windows, open the .sln file in Xamarin and aw
 Needed:
 .NETFramework,Version=v4.5
 Visual C++ Redistributable Packages for Visual Studio 2013 version x86 (needed for OpenTK.Rift package to work)
+
+Author: Julian Sychowski
