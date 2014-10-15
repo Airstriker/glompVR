@@ -5,7 +5,495 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using Microsoft.Win32;
 
-namespace glomp {
+namespace glomp
+{
+	public class FileNodeShape : Shape
+	{
+		private static readonly float BOX_SCALE = 0.8f;
+
+		//Arrays filling constructor (FileNode shape definition loading)
+		public FileNodeShape()
+		{
+			Vertices = new Vector3[] //24 Vertices need to be defined, as every face has different texture - every face needs it's own Texture Coordinates
+			{
+				//bottom face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V0 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f, -0.8f), //V1 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V2 // Bottom Left Of The Texture and Quad
+				new Vector3(-0.8f, -0.8f,  0.8f), //V3 // Bottom Right Of The Texture and Quad
+
+				//front face
+				new Vector3(-0.8f, -0.8f,  0.8f), //V4 // Bottom Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V5 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  0.8f,  0.8f), //V6 // Top Right Of The Texture and Quad
+				new Vector3(-0.8f,  0.8f,  0.8f), //V7 // Top Left Of The Texture and Quad 
+
+				//back face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V8 // Bottom Right Of The Texture and Quad
+				new Vector3(-0.8f,  0.8f, -0.8f), //V9 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f,  0.8f, -0.8f), //V10 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f, -0.8f), //V11 // Bottom Left Of The Texture and Quad
+
+				//top face
+				new Vector3(-0.8f,  0.8f, -0.8f), //V12 // Top Left Of The Texture and Quad
+				new Vector3(-0.8f,  0.8f,  0.8f), //V13 // Bottom Left Of The Texture and Quad
+				new Vector3( 0.8f,  0.8f,  0.8f), //V14 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  0.8f, -0.8f), //V15 // Top Right Of The Texture and Quad
+
+				//right face
+				new Vector3( 0.8f, -0.8f, -0.8f), //V16 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  0.8f, -0.8f), //V17 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f,  0.8f,  0.8f), //V18 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V19 // Bottom Left Of The Texture and Quad
+
+				//left face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V20 // Bottom Left Of The Texture and Quad
+				new Vector3(-0.8f, -0.8f,  0.8f), //V21 // Bottom Right Of The Texture and Quad
+				new Vector3(-0.8f,  0.8f,  0.8f), //V22 // Top Right Of The Texture and Quad
+				new Vector3(-0.8f,  0.8f, -0.8f) //V23 // Top Left Of The Texture and Quad
+			};
+
+			Indices = new int[]
+			{
+				//bottom face
+				0, 1, 2, 2, 3, 0,
+				//front face
+				4, 5, 6, 6, 7, 4,
+				//back face
+				8, 9, 10, 10, 11, 8,
+				//top face
+				12, 13, 14, 14, 15, 12,
+				//right face
+				16, 17, 18, 18, 19, 16,
+				//left face
+				20, 21, 22, 22, 23, 20,
+			};
+
+			Normals = new Vector3[] //Smooth shading is disabled
+			{
+				// bottom face
+				new Vector3( 0.0f,-1.0f, 0.0f),
+				new Vector3( 0.0f,-1.0f, 0.0f),
+				new Vector3( 0.0f,-1.0f, 0.0f),
+				new Vector3( 0.0f,-1.0f, 0.0f),
+
+				//front face
+				new Vector3( 0.0f, 0.0f, 1.0f),
+				new Vector3( 0.0f, 0.0f, 1.0f),
+				new Vector3( 0.0f, 0.0f, 1.0f),
+				new Vector3( 0.0f, 0.0f, 1.0f),
+
+				//back face
+				new Vector3( 0.0f, 0.0f,-1.0f),
+				new Vector3( 0.0f, 0.0f,-1.0f),
+				new Vector3( 0.0f, 0.0f,-1.0f),
+				new Vector3( 0.0f, 0.0f,-1.0f),
+
+				//top face
+				new Vector3( 0.0f, 1.0f, 0.0f),
+				new Vector3( 0.0f, 1.0f, 0.0f),
+				new Vector3( 0.0f, 1.0f, 0.0f),
+				new Vector3( 0.0f, 1.0f, 0.0f),
+
+				//right face
+				new Vector3( 1.0f, 0.0f, 0.0f),
+				new Vector3( 1.0f, 0.0f, 0.0f),
+				new Vector3( 1.0f, 0.0f, 0.0f),
+				new Vector3( 1.0f, 0.0f, 0.0f),
+
+				//left face
+				new Vector3(-1.0f, 0.0f, 0.0f),
+				new Vector3(-1.0f, 0.0f, 0.0f),
+				new Vector3(-1.0f, 0.0f, 0.0f),
+				new Vector3(-1.0f, 0.0f, 0.0f),
+			};
+
+			/*
+			Colors = new int[]
+			{
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+			};
+			*/
+
+			Texcoords = new Vector2[]
+			{
+				// bottom face
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+
+				//front face
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+
+				//back face
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+
+				//top face
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+
+				//right face
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+
+				//left face
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f)
+			};
+		}
+	}
+
+
+	public class DirNodeShape : Shape
+	{
+		private static readonly float BOX_SCALE = 0.8f;
+		private static readonly float dirHeight = 1.04f;
+
+		//Arrays filling constructor (DirNode shape definition loading)
+		public DirNodeShape()
+		{
+			Vertices = new Vector3[] //24 Vertices need to be defined, as every face has different texture - every face needs it's own Texture Coordinates
+			{
+				//bottom face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V0 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f, -0.8f), //V1 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V2 // Bottom Left Of The Texture and Quad
+				new Vector3(-0.8f, -0.8f,  0.8f), //V3 // Bottom Right Of The Texture and Quad
+
+				//front face
+				new Vector3(-0.8f, -0.8f,  0.8f), //V4 // Bottom Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V5 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight,  0.8f), //V6 // Top Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight,  0.8f), //V7 // Top Left Of The Texture and Quad 
+
+				//back face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V8 // Bottom Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight, -0.8f), //V9 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight, -0.8f), //V10 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f, -0.8f), //V11 // Bottom Left Of The Texture and Quad
+
+				//top face
+				new Vector3(-0.8f,  dirHeight, -0.8f), //V12 // Top Left Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight,  0.8f), //V13 // Bottom Left Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight,  0.8f), //V14 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight, -0.8f), //V15 // Top Right Of The Texture and Quad
+
+				//right face
+				new Vector3( 0.8f, -0.8f, -0.8f), //V16 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight, -0.8f), //V17 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight,  0.8f), //V18 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V19 // Bottom Left Of The Texture and Quad
+
+				//left face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V20 // Bottom Left Of The Texture and Quad
+				new Vector3(-0.8f, -0.8f,  0.8f), //V21 // Bottom Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight,  0.8f), //V22 // Top Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight, -0.8f) //V23 // Top Left Of The Texture and Quad
+			};
+
+			Indices = new int[]
+			{
+				//bottom face
+				0, 1, 2, 2, 3, 0,
+				//front face
+				4, 5, 6, 6, 7, 4,
+				//back face
+				8, 9, 10, 10, 11, 8,
+				//top face
+				12, 13, 14, 14, 15, 12,
+				//right face
+				16, 17, 18, 18, 19, 16,
+				//left face
+				20, 21, 22, 22, 23, 20,
+			};
+				
+			//To enable smooth shading uncomment the normals that are commented now and vice versa
+			//Smooth shading is enabled at the moment, because with textures it does look better than flat shading
+			Normals = new Vector3[] //Smooth shading is enabled
+			{
+				// bottom face
+				/*new Vector3( 0.0f,-1.0f, 0.0f),*/
+				new Vector3( -1.0f,-1.0f, -1.0f),
+				new Vector3( 1.0f,-1.0f, -1.0f),
+				new Vector3( 1.0f,-1.0f, 1.0f),
+				new Vector3( -1.0f,-1.0f, 1.0f),
+
+				//front face
+				/*new Vector3( 0.0f, 0.0f, 1.0f),*/
+				new Vector3( -1.0f, -1.0f, 1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+
+				//back face
+				/*new Vector3( 0.0f, 0.0f,-1.0f),*/
+				new Vector3( -1.0f, -1.0f,-1.0f),
+				new Vector3( -1.0f, 1.0f,-1.0f),
+				new Vector3( 1.0f, 1.0f,-1.0f),
+				new Vector3( 1.0f, -1.0f,-1.0f),
+
+				//top face
+				/*new Vector3( 0.0f, 1.0f, 0.0f),*/
+				new Vector3( -1.0f, 1.0f, -1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, -1.0f),
+
+				//right face
+				/*new Vector3( 1.0f, 0.0f, 0.0f),*/
+				new Vector3( 1.0f, -1.0f, -1.0f),
+				new Vector3( 1.0f, 1.0f, -1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+
+				//left face
+				/*new Vector3(-1.0f, 0.0f, 0.0f)*/
+				new Vector3(-1.0f, -1.0f, -1.0f),
+				new Vector3(-1.0f, -1.0f, 1.0f),
+				new Vector3(-1.0f, 1.0f, 1.0f),
+				new Vector3(-1.0f, 1.0f, -1.0f)
+			};
+
+			/*
+			Colors = new int[]
+			{
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+			};
+			*/
+
+			Texcoords = new Vector2[]
+			{
+				// bottom face
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+
+				//front face
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+
+				//back face
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+
+				//top face
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+
+				//right face
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+
+				//left face
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f)
+			};
+		}
+	}
+
+
+	public class DriveNodeShape : Shape
+	{
+		private static readonly float BOX_SCALE = 0.8f;
+		private static readonly float dirHeight = 1.04f;
+
+		//Arrays filling constructor (DirNode shape definition loading)
+		public DriveNodeShape()
+		{
+			Vertices = new Vector3[] //24 Vertices need to be defined, as every face has different texture - every face needs it's own Texture Coordinates
+			{
+				//bottom face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V0 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f, -0.8f), //V1 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V2 // Bottom Left Of The Texture and Quad
+				new Vector3(-0.8f, -0.8f,  0.8f), //V3 // Bottom Right Of The Texture and Quad
+
+				//front face
+				new Vector3(-0.8f, -0.8f,  0.8f), //V4 // Bottom Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V5 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight,  0.8f), //V6 // Top Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight,  0.8f), //V7 // Top Left Of The Texture and Quad 
+
+				//back face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V8 // Bottom Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight, -0.8f), //V9 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight, -0.8f), //V10 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f, -0.8f), //V11 // Bottom Left Of The Texture and Quad
+
+				//top face
+				new Vector3(-0.8f,  dirHeight, -0.8f), //V12 // Top Left Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight,  0.8f), //V13 // Bottom Left Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight,  0.8f), //V14 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight, -0.8f), //V15 // Top Right Of The Texture and Quad
+
+				//right face
+				new Vector3( 0.8f, -0.8f, -0.8f), //V16 // Bottom Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight, -0.8f), //V17 // Top Right Of The Texture and Quad
+				new Vector3( 0.8f,  dirHeight,  0.8f), //V18 // Top Left Of The Texture and Quad
+				new Vector3( 0.8f, -0.8f,  0.8f), //V19 // Bottom Left Of The Texture and Quad
+
+				//left face
+				new Vector3(-0.8f, -0.8f, -0.8f), //V20 // Bottom Left Of The Texture and Quad
+				new Vector3(-0.8f, -0.8f,  0.8f), //V21 // Bottom Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight,  0.8f), //V22 // Top Right Of The Texture and Quad
+				new Vector3(-0.8f,  dirHeight, -0.8f) //V23 // Top Left Of The Texture and Quad
+			};
+
+			Indices = new int[]
+			{
+				//bottom face
+				0, 1, 2, 2, 3, 0,
+				//front face
+				4, 5, 6, 6, 7, 4,
+				//back face
+				8, 9, 10, 10, 11, 8,
+				//top face
+				12, 13, 14, 14, 15, 12,
+				//right face
+				16, 17, 18, 18, 19, 16,
+				//left face
+				20, 21, 22, 22, 23, 20,
+			};
+
+			//To enable smooth shading uncomment the normals that are commented now and vice versa
+			//Smooth shading is enabled at the moment, because with textures it does look better than flat shading
+			Normals = new Vector3[] //Smooth shading is enabled
+			{
+				// bottom face
+				/*new Vector3( 0.0f,-1.0f, 0.0f),*/
+				new Vector3( -1.0f,-1.0f, -1.0f),
+				new Vector3( 1.0f,-1.0f, -1.0f),
+				new Vector3( 1.0f,-1.0f, 1.0f),
+				new Vector3( -1.0f,-1.0f, 1.0f),
+
+				//front face
+				/*new Vector3( 0.0f, 0.0f, 1.0f),*/
+				new Vector3( -1.0f, -1.0f, 1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+
+				//back face
+				/*new Vector3( 0.0f, 0.0f,-1.0f),*/
+				new Vector3( -1.0f, -1.0f,-1.0f),
+				new Vector3( -1.0f, 1.0f,-1.0f),
+				new Vector3( 1.0f, 1.0f,-1.0f),
+				new Vector3( 1.0f, -1.0f,-1.0f),
+
+				//top face
+				/*new Vector3( 0.0f, 1.0f, 0.0f),*/
+				new Vector3( -1.0f, 1.0f, -1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, -1.0f),
+
+				//right face
+				/*new Vector3( 1.0f, 0.0f, 0.0f),*/
+				new Vector3( 1.0f, -1.0f, -1.0f),
+				new Vector3( 1.0f, 1.0f, -1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+
+				//left face
+				/*new Vector3(-1.0f, 0.0f, 0.0f)*/
+				new Vector3(-1.0f, -1.0f, -1.0f),
+				new Vector3(-1.0f, -1.0f, 1.0f),
+				new Vector3(-1.0f, 1.0f, 1.0f),
+				new Vector3(-1.0f, 1.0f, -1.0f)
+			};
+
+			/*
+			Colors = new int[]
+			{
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+			};
+			*/
+
+			Texcoords = new Vector2[]
+			{
+				// bottom face
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+
+				//front face
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+
+				//back face
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+
+				//top face
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+
+				//right face
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, 1.0f),
+
+				//left face
+				new Vector2(0.0f, 1.0f),
+				new Vector2(1.0f, 1.0f),
+				new Vector2(1.0f, 0.0f),
+				new Vector2(0.0f, 0.0f)
+			};
+		}
+	}
 
 
     public class NodeManager {
@@ -19,9 +507,10 @@ namespace glomp {
 		public static readonly int DIR_NODE = 1;
 		public static readonly int DRIVE_NODE = 2;
 
-        private static readonly float BOX_SCALE = 0.8f;
+		//VBO related stuff
+		public static VBOUtil.Vbo[] vbo = new VBOUtil.Vbo[3];
+		public static int[] vao = new int[3]; //vertex array objects referencing a different set of vertex attributes, which can be stored in the same vertex buffer object or split across several vertex buffer objects (like in this case).
 
-        
         public NodeManager() {
         }
 
@@ -34,10 +523,25 @@ namespace glomp {
 			}
 		}
 
+		[Obsolete ("Use VBO instead of DisplayLists.")]
 		public static void GenerateDisplayLists() {
 			displayLists[FILE_NODE] = GenerateDisplayList(FILE_NODE);
 			displayLists[DIR_NODE] = GenerateDisplayList(DIR_NODE);
 			displayLists[DRIVE_NODE] = GenerateDisplayList(DRIVE_NODE);
+		}
+
+		public static void LoadVBOs() {
+			//Using VBO concept instead of DisplayList
+			// loading Vertex Buffers
+			Shape fileNodeShape = new FileNodeShape();
+			Shape dirNodeShape = new DirNodeShape();
+			Shape driveNodeShape = new DriveNodeShape();
+			vbo[FILE_NODE] = VBOUtil.LoadVBO(fileNodeShape);
+			VBOUtil.ConfigureVertexArrayObject(out vao [FILE_NODE], vbo [FILE_NODE]);
+			vbo[DIR_NODE] = VBOUtil.LoadVBO(dirNodeShape);
+			VBOUtil.ConfigureVertexArrayObject(out vao [DIR_NODE], vbo [DIR_NODE]);
+			vbo[DRIVE_NODE] = VBOUtil.LoadVBO(driveNodeShape);
+			VBOUtil.ConfigureVertexArrayObject(out vao [DRIVE_NODE], vbo [DRIVE_NODE]);
 		}
 
 		public static string GetMIMEDescription(string fileExtension) //fileExtension with dot "."

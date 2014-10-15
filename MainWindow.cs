@@ -1,3 +1,9 @@
+#region --- License ---
+/* Copyright (c) 2014 Julian Sychowski
+ * See license.txt for license info
+ */
+#endregion
+
 using System;
 using GLib;
 using System.Collections.Generic;
@@ -23,7 +29,7 @@ public partial class MainWindow : Gtk.Window {
     private float[] lightDiffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
     private float[] lightPosition = {50.0f, 100.0f, -20.0f, 1.0f };
     
-	/*  Skybox Textures  */
+	/*  Skybox Textures - used with DispalyList  */
 	String[] skyBoxTextures = {
 		"..\\..\\resources\\skybox_front.bmp",
 		"..\\..\\resources\\skybox_right.bmp",
@@ -32,6 +38,9 @@ public partial class MainWindow : Gtk.Window {
 		"..\\..\\resources\\skybox_up.bmp",
 		"..\\..\\resources\\skybox_down.bmp"
 	};
+
+	/* SkyBox Texture - used with VBO (more textures would be related to much higher overhead when using VBO) */
+	String skyBoxTexture = "..\\..\\resources\\skybox_front.bmp";
 
 	/*  File Nodes Textures  */
 	String[] fileNodeTextures = {
@@ -222,7 +231,8 @@ public partial class MainWindow : Gtk.Window {
         // setup the scene
 
 		// init SkyBox
-		skyBox = new SkyBox (50.0f, skyBoxTextures);
+		skyBox = new SkyBox (50.0f, skyBoxTexture); //used with VBO
+		//skyBox = new SkyBox (50.0f, skyBoxTextures); //used with DispalyList
         InitScene();
 
 		// init mouse
@@ -244,7 +254,8 @@ public partial class MainWindow : Gtk.Window {
 		NodeManager.LoadNodesTextures (NodeManager.FILE_NODE, fileNodeTextures);
 		NodeManager.LoadNodesTextures (NodeManager.DIR_NODE, dirNodeTextures);
 		NodeManager.LoadNodesTextures (NodeManager.DRIVE_NODE, driveNodeTextures);
-		NodeManager.GenerateDisplayLists ();
+		//NodeManager.GenerateDisplayLists (); //obsolete
+		NodeManager.LoadVBOs ();
         slices.Reset(START_PATH);
         
         sceneList.AddLast(slices);

@@ -89,6 +89,8 @@
     <Compile Include="TextureManager.cs" />
     <Compile Include="Mouse.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="Shape.cs" />
+    <Compile Include="VBOUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop">

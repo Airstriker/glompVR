@@ -28,7 +28,9 @@ namespace glomp {
         private static readonly float[] THUMB_COLOUR = {1.0f, 1.0f, 1.0f};
         private static readonly float ACTIVE_SCALE = 1.3f;
         
-        private int displayList;
+        private int displayList; //obsolete
+		private VBOUtil.Vbo vbo; //vertex buffer object
+		private int vao; //vertex array object
         private String fileName;
         private String file;
 		private String fileExtension;
@@ -244,9 +246,18 @@ namespace glomp {
             fileName = _fileName;
         }
         
+		[Obsolete ("Use VBO instead of DisplayList.")]
         public void SetDisplayList(int _displayList) {
             displayList = _displayList;
         }
+
+		public void SetVBO(VBOUtil.Vbo _vbo) {
+			vbo = _vbo;
+		}
+
+		public void SetVAO(int _vao) {
+			vao = _vao;
+		}
         
         public void GenTexture(bool force) {
 			Trace.WriteLine ("GenTexture");
@@ -434,14 +445,16 @@ namespace glomp {
 				GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
                 GL.Disable(EnableCap.Texture2D);
 				GL.Color4(Color.White);
-                GL.CallList(displayList);
+                //GL.CallList(displayList);
+				VBOUtil.Draw(vao, vbo);
                 GL.PopAttrib();
             
                 GL.Scale(0.8f, 0.8f, 0.8f);
             }
             
-			GL.CallList(displayList);
-             
+			//GL.CallList(displayList);
+			VBOUtil.Draw(vao, vbo); 
+
             PostRenderBox();    
         }
         

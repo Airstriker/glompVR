@@ -5,14 +5,174 @@ using System.Drawing;
 
 namespace glomp
 {
+	public class SkyBoxShape : Shape
+	{
+		private float mSize = 0;
+		private float numberOfTextureRepeats = 3.0f;
+
+		//Arrays filling constructor (SkyBox shape definition loading)
+		public SkyBoxShape(float aSize)
+		{
+			mSize = aSize;
+
+			Vertices = new Vector3[] //24 Vertices need to be defined, as every face has different texture - every face needs it's own Texture Coordinates
+			{
+				//front face
+				new Vector3(  mSize/2f, mSize/2f, -mSize/2f ), //V0
+				new Vector3( -mSize/2f, mSize/2f, -mSize/2f ), //V1
+				new Vector3( -mSize/2f, -mSize/2f, -mSize/2f ), //V2
+				new Vector3(  mSize/2f, -mSize/2f, -mSize/2f ), //V3
+
+				//left face
+				new Vector3( -mSize/2f, mSize/2f, mSize/2f ), //V4
+				new Vector3( -mSize/2f, -mSize/2f, mSize/2f ), //V5
+				new Vector3( -mSize/2f, -mSize/2f, -mSize/2f ), //V6
+				new Vector3( -mSize/2f, mSize/2f, -mSize/2f ), //V7
+
+				//back face
+				new Vector3( mSize/2f, mSize/2f,  mSize/2f ), //V8
+				new Vector3( mSize/2f, -mSize/2f,  mSize/2f ), //V9
+				new Vector3( -mSize/2f, -mSize/2f, mSize/2f ), //V10
+				new Vector3( -mSize/2f, mSize/2f, mSize/2f ), //V11
+
+				//right face
+				new Vector3(  mSize/2f, mSize/2f, -mSize/2f ), //V12
+				new Vector3(  mSize/2f, -mSize/2f, -mSize/2f ), //V13
+				new Vector3( mSize/2f, -mSize/2f,  mSize/2f ), //V14
+				new Vector3( mSize/2f, mSize/2f,  mSize/2f ), //V15
+
+				//top face
+				new Vector3( mSize/2f, mSize/2f,  mSize/2f ), //V16
+				new Vector3( -mSize/2f, mSize/2f, mSize/2f ), //V17
+				new Vector3( -mSize/2f, mSize/2f, -mSize/2f ), //V18
+				new Vector3(  mSize/2f, mSize/2f, -mSize/2f ), //V19
+
+				//bottom face
+				new Vector3( mSize/2f, -mSize/2f,  mSize/2f ), //V20
+				new Vector3(  mSize/2f, -mSize/2f, -mSize/2f ), //V21
+				new Vector3( -mSize/2f, -mSize/2f, -mSize/2f ), //V22
+				new Vector3( -mSize/2f, -mSize/2f, mSize/2f ), //V23
+			};
+
+			Indices = new int[]
+			{
+				// front face
+				0, 1, 2, 2, 3, 0,
+				// left face
+				4, 5, 6, 6, 7, 4,
+				// back face
+				8, 9, 10, 10, 11, 8,
+				// right face
+				12, 13, 14, 14, 15, 12,
+				// top face
+				16, 17, 18, 18, 19, 16,
+				// bottom face
+				20, 21, 22, 22, 23, 20,
+			};
+
+			Normals = new Vector3[] //Smooth shading is enabled
+			{
+				//front face
+				new Vector3( -1.0f, -1.0f, 1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+
+				//left face
+				new Vector3( 1.0f, -1.0f, -1.0f),
+				new Vector3( 1.0f, 1.0f, -1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+
+				//back face
+				new Vector3( -1.0f, -1.0f,-1.0f),
+				new Vector3( -1.0f, 1.0f,-1.0f),
+				new Vector3( 1.0f, 1.0f,-1.0f),
+				new Vector3( 1.0f, -1.0f,-1.0f),
+
+				//right face
+				new Vector3( -1.0f, -1.0f, 1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+				new Vector3( -1.0f, 1.0f,-1.0f),
+				new Vector3( -1.0f, -1.0f,-1.0f),
+
+				//top face
+				new Vector3( -1.0f, -1.0f, -1.0f),
+				new Vector3( 1.0f, -1.0f, -1.0f),
+				new Vector3( 1.0f, -1.0f, 1.0f),
+				new Vector3( -1.0f, -1.0f, 1.0f),
+
+				// bottom face
+				new Vector3( -1.0f, 1.0f, -1.0f),
+				new Vector3( -1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, 1.0f),
+				new Vector3( 1.0f, 1.0f, -1.0f)
+			};
+
+			/*
+			Colors = new int[]
+			{
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.DarkRed),
+				Util.ColorToRgba32(Color.Gold),
+				Util.ColorToRgba32(Color.Gold),
+			};
+			*/
+
+			Texcoords = new Vector2[]
+			{
+				//front face
+				new Vector2(numberOfTextureRepeats, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, numberOfTextureRepeats),
+
+				//left face
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, 0.0f),
+
+				//back face
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, 0.0f),
+
+				//right face
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, 0.0f),
+
+				//top face
+				new Vector2(numberOfTextureRepeats, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, numberOfTextureRepeats),
+
+				// bottom face
+				new Vector2(numberOfTextureRepeats, numberOfTextureRepeats),
+				new Vector2(numberOfTextureRepeats, 0.0f),
+				new Vector2(0.0f, 0.0f),
+				new Vector2(0.0f, numberOfTextureRepeats)
+			};
+		}
+	}
+
 	public class SkyBox
 	{
-		private float mSize;
+		private float mSize; //obsolete when using VBO
 
-		private int displayList; //DisplayList for SkyBox
+		private int displayList; //DisplayList for SkyBox - obsolete
 
 		/* TEXTURES  */
 		private static int[] skyBoxTexture = new int[6];
+		private static int skyBoxSingleTexture;
 
 		/* TEXTURE INDEXes  */
 		private static readonly int SKY_FRONT = 0;
@@ -25,6 +185,11 @@ namespace glomp
 		/* SKYBOX LIGHTENING */
 		private float spotLightDirectionAngle = 0.0f;
 
+		//VBO related stuff
+		VBOUtil.Vbo vbo; //vertex buffer object
+		int vao; //array buffer object
+
+		[Obsolete ("Use one texture instead - much lower overhead when using VBO.")]
 		public SkyBox (float aSize, String[] textures)
 		{
 			mSize = aSize;
@@ -43,6 +208,23 @@ namespace glomp
 
 			GenerateDisplayList();
 		}
+
+		//Constructor to be used with VBO concept. Only single texture used. DisplayList not neaded any longer.
+		public SkyBox (float aSize, String texture)
+		{
+			mSize = aSize;
+			if (texture !=null) {
+				skyBoxSingleTexture = TextureManager.LoadTexture(texture);
+			}
+
+			//GenerateDisplayList();
+
+			//Using VBO concept instead of DisplayList
+			// loading Vertex Buffers
+			Shape skyBoxShape = new SkyBoxShape(aSize);
+			vbo = VBOUtil.LoadVBO(skyBoxShape);
+			VBOUtil.ConfigureVertexArrayObject(out vao, vbo);
+		}			
 
 		//Ordinary skyboxes have lightening disabled but this is rather a box than skybox ;)
 		//NOTE! We're also disabling main light (Light0) here
@@ -134,6 +316,7 @@ namespace glomp
 			GL.Disable (EnableCap.DepthTest);
 			//GL.Disable (EnableCap.Blend);
 			GL.Enable(EnableCap.Texture2D);
+			GL.BindTexture(TextureTarget.Texture2D, skyBoxSingleTexture); //Only one texture used
 			//GL.DepthMask (false);
 
 			//Changing Projection matrix to change FOV to 90 degrees - better SkyBox quality than in 22,5 degrees.
@@ -165,7 +348,8 @@ namespace glomp
 			this.enableLights (ref frameDelta);
 
 			///////////////////////////////////////////////////////////////////////////////////////////////////
-			GL.CallList(displayList); //Use pre-generated DisplayList
+			VBOUtil.Draw(vao, vbo);
+			//GL.CallList(displayList); //Use pre-generated DisplayList - obsolete solution
 			///////////////////////////////////////////////////////////////////////////////////////////////////
 
 			this.disableLights ();
@@ -186,6 +370,7 @@ namespace glomp
 		}
 	
 
+		[Obsolete ("Use VBO instead of DisplayList.")]
 		private int GenerateDisplayList() {
 			displayList = GL.GenLists(1);
 

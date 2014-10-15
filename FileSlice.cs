@@ -170,8 +170,10 @@ namespace glomp {
 				node.File = drive.Name;
 				node.SetParent (this);
 
-				//Assigning display list for node
-				node.SetDisplayList (NodeManager.displayLists [DRIVE_NODE]);
+				//Assigning VBO for node
+				//node.SetDisplayList (NodeManager.displayLists [DRIVE_NODE]);
+				node.SetVBO(NodeManager.vbo [DRIVE_NODE]);
+				node.SetVAO(NodeManager.vao [DRIVE_NODE]);
 
 				List<FileNode> fileNodesList = null;
 				if (fileNodes == null) {
@@ -404,8 +406,10 @@ namespace glomp {
 			node.File = fileNodeName;
 			node.SetParent (this);
 
-			//Assigning display list for node
-			node.SetDisplayList (NodeManager.displayLists [nodeType]);
+			//Assigning VBO for node
+			//node.SetDisplayList (NodeManager.displayLists [nodeType]);
+			node.SetVBO (NodeManager.vbo [nodeType]);
+			node.SetVAO (NodeManager.vao [nodeType]);
 
 			List<FileNode> fileNodesList = null;
 			if (fileNodes == null) {
