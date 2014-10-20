@@ -28,9 +28,11 @@ namespace glomp {
         private static readonly float[] THUMB_COLOUR = {1.0f, 1.0f, 1.0f};
         private static readonly float ACTIVE_SCALE = 1.3f;
         
+		//VBO related stuff
+		private VBOUtil.Vbo vbo; //vertex buffer object for grahical representation of FileNode
+		private int vao; //vertex array object for grahical representation of FileNode
+
         private int displayList; //obsolete
-		private VBOUtil.Vbo vbo; //vertex buffer object
-		private int vao; //vertex array object
         private String fileName;
         private String file;
 		private String fileExtension;
@@ -479,16 +481,8 @@ namespace glomp {
 					GL.Color4(0.4f, 1f, 0.8f, parentSlice.Alpha);
                 }
 
-				GL.Begin(PrimitiveType.Quads);
-                GL.TexCoord2(1.0f, 1.0f); 
-                GL.Vertex3(-5.1f, -1.0f,  0.0f);  // Bottom Right Of The Texture and Quad
-                GL.TexCoord2(0.0f, 1.0f); 
-                GL.Vertex3( -1.1f, -1.0f,  0.0f);  // Bottom Left Of The Texture and Quad
-                GL.TexCoord2(0.0f, 0.0f); 
-                GL.Vertex3( -1.1f,  1.0f,  0.0f);  // Top Left Of The Texture and Quad
-                GL.TexCoord2(1.0f, 0.0f); 
-                GL.Vertex3(-5.1f,  1.0f,  0.0f);  // Top Right Of The Texture and Quad
-                GL.End();
+				//Draw using VBO
+				VBOUtil.Draw(NodeManager.labelVao, NodeManager.labelVbo);
 
 				//GL.PopAttrib ();
                 
