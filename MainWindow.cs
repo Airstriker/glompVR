@@ -296,7 +296,7 @@ public partial class MainWindow : Gtk.Window {
         
         //glwidget1.QueueDraw();
         frameCounter++;   
-        //GraphicsContext.CurrentContext.SwapBuffers();      
+		//OpenTK.Graphics.GraphicsContext.CurrentContext.SwapBuffers();      
     }
 
 
