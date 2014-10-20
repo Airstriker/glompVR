@@ -312,9 +312,12 @@ namespace glomp
 
 		public void drawSkyBox(ref float frameDelta)
 		{
-			//GL.Disable (EnableCap.Lighting);
-			GL.Disable (EnableCap.DepthTest);
-			//GL.Disable (EnableCap.Blend);
+			/* In some cases, you might want to disable depth testing and still allow the depth buffer updated while you are rendering your objects.
+			 * It turns out that if you disable depth testing (glDisable(GL_DEPTH_TEST)​), GL also disables writes to the depth buffer.
+			 * The correct solution is to tell GL to ignore the depth test results with glDepthFunc(GL_ALWAYS)​.
+			 * Be careful because in this state, if you render a far away object last, the depth buffer will contain the values of that far object.
+			*/
+			GL.DepthFunc(DepthFunction.Always); //GL.Disable (EnableCap.DepthTest);
 			GL.Enable(EnableCap.Texture2D);
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxSingleTexture); //Only one texture used
 			//GL.DepthMask (false);
