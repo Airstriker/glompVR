@@ -323,8 +323,10 @@ public partial class MainWindow : Gtk.Window {
 		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
 
 		//If you're drawing a scene that covers the whole screen each frame (for example when using skyBox), only clear depth buffer but not the color buffer.
+		//The buffers should always be cleared. On much older hardware, there was a technique to get away without clearing the scene, but on even semi-recent hardware, this will actually make things slower. So always do the clear.
+		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 		//GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-		GL.Clear(ClearBufferMask.DepthBufferBit);
+		//GL.Clear(ClearBufferMask.DepthBufferBit);
 
 		// Looking in the right direction
 		Matrix4 modelview = Matrix4.LookAt(cam.Eye, cam.Target, cam.Up);
