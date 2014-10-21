@@ -317,10 +317,10 @@ namespace glomp
 			 * The correct solution is to tell GL to ignore the depth test results with glDepthFunc(GL_ALWAYS)​.
 			 * Be careful because in this state, if you render a far away object last, the depth buffer will contain the values of that far object.
 			*/
-			GL.DepthFunc(DepthFunction.Always); //GL.Disable (EnableCap.DepthTest);
-			GL.Enable(EnableCap.Texture2D);
-			GL.BindTexture(TextureTarget.Texture2D, skyBoxSingleTexture); //Only one texture used
+			//GL.DepthFunc(DepthFunction.Always); //GL.Disable (EnableCap.DepthTest);
 			//GL.DepthMask (false);
+			GL.BindTexture(TextureTarget.Texture2D, skyBoxSingleTexture); //Only one texture used
+
 
 			//Changing Projection matrix to change FOV to 90 degrees - better SkyBox quality than in 22,5 degrees.
 			/*
@@ -367,9 +367,9 @@ namespace glomp
 			*/
 
 			//GL.DepthMask(true);
+			//GL.Clear(ClearBufferMask.DepthBufferBit);
 			//GL.Enable(EnableCap.Lighting);
-			GL.Enable(EnableCap.DepthTest);
-			GL.Disable(EnableCap.Texture2D);
+			//GL.Enable(EnableCap.DepthTest);
 		}
 	
 

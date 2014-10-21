@@ -200,12 +200,18 @@ public partial class MainWindow : Gtk.Window {
         InitProjectionMatrix();
         
         GL.Enable(EnableCap.DepthTest);
-		GL.Enable(EnableCap.ColorMaterial);
+		GL.Enable(EnableCap.ColorMaterial); //TODO: set this state only where it should be - disabling it gives quite a lot of FPS
         GL.Enable(EnableCap.Lighting);
+		GL.Enable(EnableCap.Texture2D);
         GL.Enable(EnableCap.CullFace);
         GL.CullFace(CullFaceMode.Back);
         
-        GL.DepthFunc(DepthFunction.Lequal);
+		/* In some cases, you might want to disable depth testing and still allow the depth buffer updated while you are rendering your objects.
+		 * It turns out that if you disable depth testing (glDisable(GL_DEPTH_TEST)​), GL also disables writes to the depth buffer.
+		 * The correct solution is to tell GL to ignore the depth test results with glDepthFunc(GL_ALWAYS)​.
+		 * Be careful because in this state, if you render a far away object last, the depth buffer will contain the values of that far object.
+		*/
+        GL.DepthFunc(DepthFunction.Always);
 		GL.ShadeModel(ShadingModel.Smooth); //smooth or flat
         
         GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);

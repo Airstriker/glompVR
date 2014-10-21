@@ -475,7 +475,7 @@ namespace glomp {
                     } else {
                         GL.Translate(new Vector3(0.0f, 0.35f, 0.0f));
                     }
-                    GL.Disable(EnableCap.DepthTest);
+					GL.Disable(EnableCap.DepthTest);
 					GL.Color4(1.0f, 0.4f, 0.4f, parentSlice.Alpha);
                 } else {
 					GL.Color4(0.4f, 1f, 0.8f, parentSlice.Alpha);
@@ -508,10 +508,8 @@ namespace glomp {
 			GL.PushMatrix();
 			GL.PushAttrib (AttribMask.EnableBit); //Remembering attributes
 			if (isThumbnailed) {
-				GL.Enable (EnableCap.Texture2D);
 				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);
 			} else if (isDirectory) {
-				GL.Enable (EnableCap.Texture2D);
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
 				if (isDirFaded || isNodeActivated || isDimmed) {
@@ -527,6 +525,7 @@ namespace glomp {
 				GL.BindTexture (TextureTarget.Texture2D, NodeManager.nodeTextures [NodeManager.DIR_NODE] [currentFrame / 100]); //APPLY TEXTURE TO DIRECTORIES!
 			} else {
 				//ordinary files
+				GL.Disable (EnableCap.Texture2D);
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
 				if (isDimmed) {
@@ -543,7 +542,6 @@ namespace glomp {
         }
         
         public static void SetTextState(bool dimmed) {
-            GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.Blend);
             if(dimmed) {
                 GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
@@ -558,7 +556,6 @@ namespace glomp {
         
         public static void UnsetTextState(bool dimmed) {
             GL.PopAttrib();
-            GL.Disable(EnableCap.Texture2D);
             GL.Enable(EnableCap.Lighting);
             GL.Enable(EnableCap.CullFace);
             GL.Disable(EnableCap.Blend); 
