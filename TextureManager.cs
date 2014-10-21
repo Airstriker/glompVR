@@ -21,7 +21,7 @@ namespace glomp
 			GL.BindTexture(TextureTarget.Texture2D, id);
 
 			Bitmap bmp = new Bitmap(filename);
-			BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+			BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
 			/* This uses GL_RGBA8​ for the internal format. GL_BGRA​ and GL_UNSIGNED_BYTE​ (or GL_UNSIGNED_INT_8_8_8_8​ is for the data in pixels array.
 			 * The driver will likely not have to perform any CPU-based conversion and DMA this data directly to the video card.
@@ -31,7 +31,7 @@ namespace glomp
 			 * So it's probably best to steer clear of GL_RGB8​. We should also state that on some platforms, such as Windows, GL_BGRA​ for the pixel upload format is preferred.
 			*/
 			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, bmp_data.Width, bmp_data.Height, 0,
-				OpenTK.Graphics.OpenGL.PixelFormat.Bgr/*.Bgra*/, PixelType.UnsignedByte, bmp_data.Scan0);
+				OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bmp_data.Scan0);
 
 			bmp.UnlockBits(bmp_data);
 
