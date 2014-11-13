@@ -53,7 +53,7 @@ namespace glomp {
         private bool isThumbnailed = false;
         private String desc = "";
         private float[] typeColour;
-        private float[] currentColour = fileColour;
+        private float[] currentColour = dirColour;
 		private DateTime creationTime;
 		private DateTime lastAccessTime;
         private DateTime modifyTime;
@@ -397,41 +397,48 @@ namespace glomp {
             PreRenderBox();
             
             MoveIntoPosition(true);
-            
+
             if(isDirectory) {
-				currentColour = dirColour; //MODIFYING TEXTURE COLOR HERE!
                 GL.Translate(0f, dirHeight-1.0f, 0f);
                 GL.Scale(1f, dirHeight, 1f);
             } else {
                 if(isThumbnailed) {
-                    currentColour = THUMB_COLOUR;  
+					GL.TexEnv (TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Replace);
                 } else if(isExecutable) {
                     currentColour = exeColour;
                 } else if(isReadOnly) {
                     currentColour = roColour;
                 } else {
 					currentColour = GetColourForNode();
-                } 
+                }
+
+				if (!isThumbnailed) {
+					GL.Color4 (currentColour [0], currentColour [1], currentColour [2], parentSlice.Alpha);
+					GL.Enable (EnableCap.ColorMaterial);
+				}
             }
             
-			if (isDirFaded) {
+			/*
+			if (isNodeActivated) { //Node on which ENTER was pressed (color changing disabled at the moment)
 				GL.Color4 (currentColour [0], currentColour [1], currentColour [2], fadeAmount);
-			} else if (isNodeActivated) {
+				GL.Enable (EnableCap.ColorMaterial);
+            } else if (isDirFaded) { //Directories fading disabled at the moment (directories were fading when active node was being changed to file)
 				GL.Color4 (currentColour [0], currentColour [1], currentColour [2], fadeAmount);
-			} else {
-				GL.Color4(currentColour[0], currentColour[1], currentColour[2], parentSlice.Alpha);
-            }
-                
+				GL.Enable (EnableCap.ColorMaterial);
+			}
+			*/
             
             if(isActive) {
 				if(!isDirectory) {
                     GL.Scale(ACTIVE_SCALE, ACTIVE_SCALE, ACTIVE_SCALE);
                     GL.Translate(Vector3.UnitY * 0.5f);
-                } 
-                if(!isThumbnailed) {
-					GL.Color4(activeColour[0], activeColour[1], activeColour[2], parentSlice.Alpha);
                 }
-            }            
+				if(isDirectory) {
+					GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Replace); //Makes a nice enlighted ice-cube like node (no colour mixing with texture is allowed)
+					//GL.Color4(activeColour[0], activeColour[1], activeColour[2], parentSlice.Alpha);
+					//GL.Enable (EnableCap.ColorMaterial);
+                }
+            }
             
             if(parentSlice.IsScaled) {
                 float scaleValue = parentSlice.Scale - (offset / (float)parentSlice.NumFiles);
@@ -455,7 +462,7 @@ namespace glomp {
             }
             
 			//GL.CallList(displayList);
-			VBOUtil.Draw(vao, vbo); 
+			VBOUtil.Draw(vao, vbo);
 
             PostRenderBox();    
         }
@@ -537,6 +544,19 @@ namespace glomp {
         }
         
         private void PostRenderBox() {
+			if (isThumbnailed || (isActive && isDirectory)) { //Only Thumbnailed files and active directories are drawn with TextureEnvMode = Replace - so have to restore Modulate mode after they have beeen drawn
+				GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Modulate); //Restore default mode (mixing texture with colour is allowed)
+			}
+
+			if (!isDirectory && !isThumbnailed) { //Disabling colouring after coloured files have been drawn
+				//Note, that this is not recommended, as GL.Material calls are a performance pain, however we need to do this, to restore original object properties, unaffected by colour.
+				GL.Disable (EnableCap.ColorMaterial);
+				float[] mat_abient = { 0.2f, 0.2f, 0.2f, 1.0f };
+				float[] mat_diffuse = { 0.8f, 0.8f, 0.8f, 1.0f };
+				GL.Material (MaterialFace.Front, MaterialParameter.Diffuse, mat_diffuse); //TODO: use textures instead of colours to get rid of these callls
+				GL.Material (MaterialFace.Front, MaterialParameter.Ambient, mat_abient);
+			}
+
 			GL.PopAttrib(); // Due to changes in attributes in PreRenderBox
 			GL.PopMatrix(); // Due to PushMatrix in PreRenderBox
         }

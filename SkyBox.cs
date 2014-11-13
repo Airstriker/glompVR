@@ -321,7 +321,6 @@ namespace glomp
 			//GL.DepthMask (false);
 			GL.BindTexture(TextureTarget.Texture2D, skyBoxSingleTexture); //Only one texture used
 
-
 			//Changing Projection matrix to change FOV to 90 degrees - better SkyBox quality than in 22,5 degrees.
 			/*
 			GL.PushMatrix ();

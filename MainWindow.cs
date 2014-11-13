@@ -200,7 +200,6 @@ public partial class MainWindow : Gtk.Window {
         InitProjectionMatrix();
         
         GL.Enable(EnableCap.DepthTest);
-		GL.Enable(EnableCap.ColorMaterial); //TODO: set this state only where it should be - disabling it gives quite a lot of FPS
         GL.Enable(EnableCap.Lighting);
 		GL.Enable(EnableCap.Texture2D);
         GL.Enable(EnableCap.CullFace);
