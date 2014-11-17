@@ -402,7 +402,7 @@ namespace glomp {
                 GL.Translate(0f, dirHeight-1.0f, 0f);
                 GL.Scale(1f, dirHeight, 1f);
             } else {
-                if(isThumbnailed) {
+				if(isThumbnailed && !isDimmed) {
 					GL.TexEnv (TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Replace);
                 } else if(isExecutable) {
                     currentColour = exeColour;
@@ -515,12 +515,16 @@ namespace glomp {
 			GL.PushMatrix();
 			GL.PushAttrib (AttribMask.EnableBit); //Remembering attributes
 			if (isThumbnailed) {
+				if (isDimmed) {
+					GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent
+				}
 				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);
 			} else if (isDirectory) {
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
-				if (isDirFaded || isNodeActivated || isDimmed) {
-					GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Very transparent
+				if (isDirFaded || isDimmed) {
+					GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent
+					//GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Use this when no texture applied.
 				} else {
 					GL.BlendFunc (BlendingFactorSrc.One, BlendingFactorDest.One); //Better visibility than GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
 				}
@@ -544,7 +548,7 @@ namespace glomp {
         }
         
         private void PostRenderBox() {
-			if (isThumbnailed || (isActive && isDirectory)) { //Only Thumbnailed files and active directories are drawn with TextureEnvMode = Replace - so have to restore Modulate mode after they have beeen drawn
+			if ((isThumbnailed && !isDimmed) || (isActive && isDirectory)) { //Only Thumbnailed files and active directories are drawn with TextureEnvMode = Replace - so have to restore Modulate mode after they have beeen drawn
 				GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Modulate); //Restore default mode (mixing texture with colour is allowed)
 			}
 
