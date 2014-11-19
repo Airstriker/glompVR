@@ -48,12 +48,11 @@ namespace glomp {
         private bool isExecutable = false;
 		private bool isNodeActivated = false;
         private String thumbFileName = "";
+		private int fileTextureIndex;
         private int thumbTextureIndex;
         private Bitmap thumbBmp;
         private bool isThumbnailed = false;
         private String desc = "";
-        private float[] typeColour;
-        private float[] currentColour = dirColour;
 		private DateTime creationTime;
 		private DateTime lastAccessTime;
         private DateTime modifyTime;
@@ -150,11 +149,6 @@ namespace glomp {
         public DateTime ModifyTime {
             get { return modifyTime; }
             set { modifyTime = value; }
-        }
-        
-        public float[] TypeColour {
-            get { return typeColour; }
-            set { typeColour = value; }
         }
         
         public bool IsDirectory {
@@ -294,18 +288,13 @@ namespace glomp {
                                                         PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
                                                         textLabelBmp.UnlockBits(data);
             textLabelBmp.Dispose();
-            
+
             // right... now do the thumbnail if we have one
-            
 			if(thumbBmp != null) {
                 
                 // set up GL for the texture
                 thumbTextureIndex = GL.GenTexture();
                 GL.BindTexture(TextureTarget.Texture2D, thumbTextureIndex);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
                 
 				//get at the bitmap data for the thumbnail
 				/*
@@ -331,6 +320,7 @@ namespace glomp {
                 }
                 thumbBmp = scaled;
 				*/
+
 				thumbBmp = ResizeBitmap (thumbBmp, 128, 128);
 
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
@@ -344,9 +334,61 @@ namespace glomp {
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
                                                         PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
                 thumbBmp.UnlockBits(data);
-                isThumbnailed = true;
-            }
-     
+                
+				// set texture parameters
+
+				// Generate mipmaps
+				GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+
+				// When MAGnifying the image (no bigger mipmap available), use LINEAR filtering
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+				// When MINifying the image, use a LINEAR blend of two mipmaps, each filtered LINEARLY too
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
+
+				isThumbnailed = true;
+
+			} else if (!isDirectory) {
+				// generate texture for ordinary files (just a one pixel coloured texture in repeat mode)
+				fileTextureIndex = GL.GenTexture();
+
+				// bind the texture
+				GL.BindTexture(TextureTarget.Texture2D, fileTextureIndex);
+
+				// create some image data
+				int width = 1;
+				int height = 1;
+				byte[] image = new byte[4 * width * height];
+				for(int j = 0;j<height;++j) {
+					for(int i = 0;i<width;++i) {
+						int index = j*width + i;
+
+						float[] textureColour = null;
+						if(isExecutable) {
+							textureColour = exeColour;
+						} else if(isReadOnly) {
+							textureColour = roColour;
+						} else {
+							textureColour = GetColourForNode();
+						}
+
+						image[4 * index + 0] = Convert.ToByte (textureColour[0] * 255); // R
+						image[4 * index + 1] = Convert.ToByte (textureColour[1] * 255); // G
+						image[4 * index + 2] = Convert.ToByte (textureColour[2] * 255); // B
+						image[4 * index + 3] = Convert.ToByte (parentSlice.Alpha * 255); // A
+					}
+				}
+
+				// set texture content
+				GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image);
+
+				// set texture parameters
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+			}
         }
         
         
@@ -401,21 +443,8 @@ namespace glomp {
             if(isDirectory) {
                 GL.Translate(0f, dirHeight-1.0f, 0f);
                 GL.Scale(1f, dirHeight, 1f);
-            } else {
-				if(isThumbnailed && !isDimmed) {
-					GL.TexEnv (TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Replace);
-                } else if(isExecutable) {
-                    currentColour = exeColour;
-                } else if(isReadOnly) {
-                    currentColour = roColour;
-                } else {
-					currentColour = GetColourForNode();
-                }
-
-				if (!isThumbnailed) {
-					GL.Color4 (currentColour [0], currentColour [1], currentColour [2], parentSlice.Alpha);
-					GL.Enable (EnableCap.ColorMaterial);
-				}
+            } else if(isThumbnailed && !isDimmed) {
+				GL.TexEnv (TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Replace);
             }
             
 			/*
@@ -514,51 +543,39 @@ namespace glomp {
         private void PreRenderBox() {
 			GL.PushMatrix();
 			GL.PushAttrib (AttribMask.EnableBit); //Remembering attributes
-			if (isThumbnailed) {
-				if (isDimmed) {
-					GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent
-				}
-				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);
-			} else if (isDirectory) {
+
+			if (isDirectory) {
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
-				if (isDirFaded || isDimmed) {
-					GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent
-					//GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Use this when no texture applied.
-				} else {
-					GL.BlendFunc (BlendingFactorSrc.One, BlendingFactorDest.One); //Better visibility than GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
-				}
+
 				Random rnd = new Random ();
 				int random = rnd.Next (0, 3); // creates a random number in the given range
 				currentFrame = (currentFrame + 1 + random);
 				if (currentFrame / 100 > 7)
 					currentFrame = 0;
 				GL.BindTexture (TextureTarget.Texture2D, NodeManager.nodeTextures [NodeManager.DIR_NODE] [currentFrame / 100]); //APPLY TEXTURE TO DIRECTORIES!
-			} else {
-				//ordinary files
-				GL.Disable (EnableCap.Texture2D);
+
+			} else if (isThumbnailed) {
+				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);
+
+			} else { //ordinary files
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
-				if (isDimmed) {
-					GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Very transparent
-				} else {
-					GL.BlendFunc (BlendingFactorSrc.One, BlendingFactorDest.One); //Better visibility than GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
-				}
+
+				GL.BindTexture (TextureTarget.Texture2D, fileTextureIndex);
+			}
+
+			if (isDirFaded || isDimmed) {
+				GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent
+				//GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Use this when no texture applied.
+			} else {
+				GL.BlendFunc (BlendingFactorSrc.One, BlendingFactorDest.One); //Better visibility than GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
 			}
         }
         
         private void PostRenderBox() {
 			if ((isThumbnailed && !isDimmed) || (isActive && isDirectory)) { //Only Thumbnailed files and active directories are drawn with TextureEnvMode = Replace - so have to restore Modulate mode after they have beeen drawn
 				GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Modulate); //Restore default mode (mixing texture with colour is allowed)
-			}
-
-			if (!isDirectory && !isThumbnailed) { //Disabling colouring after coloured files have been drawn
-				//Note, that this is not recommended, as GL.Material calls are a performance pain, however we need to do this, to restore original object properties, unaffected by colour.
-				GL.Disable (EnableCap.ColorMaterial);
-				float[] mat_abient = { 0.2f, 0.2f, 0.2f, 1.0f };
-				float[] mat_diffuse = { 0.8f, 0.8f, 0.8f, 1.0f };
-				GL.Material (MaterialFace.Front, MaterialParameter.Diffuse, mat_diffuse); //TODO: use textures instead of colours to get rid of these callls
-				GL.Material (MaterialFace.Front, MaterialParameter.Ambient, mat_abient);
 			}
 
 			GL.PopAttrib(); // Due to changes in attributes in PreRenderBox
@@ -635,7 +652,7 @@ namespace glomp {
                     textSize = (int)Math.Round(20.0f / (displayText.Length / 15.0f), 0); 
                 }
                 
-                Font TextFont = new Font(FontFamily.GenericSansSerif, textSize);    
+                Font TextFont = new Font(FontFamily.GenericSansSerif, textSize);
             
                 gfx.DrawString(displayText, TextFont, Brushes.White, drawRect, drawFormat);    
                 
