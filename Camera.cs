@@ -100,7 +100,7 @@ namespace glomp {
             GL.Translate(translate);
         }
 
-		public void updateCameraParams(ref Mouse inputDevice, ref float frameDelta) { //frameDelta needed for fps dependent behavior
+		public void updateCameraParams(Mouse inputDevice, float frameDelta) { //frameDelta needed for fps dependent behavior
 
 			if (inputDevice != null /* && inputDevice.GetType() == Mouse*/) {
 

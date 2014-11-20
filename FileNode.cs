@@ -16,6 +16,7 @@ namespace glomp {
         private int textSize = 20;
 
 		private int currentFrame = 0;
+		private float timeSinceLastFrameChange = 0;
         
         private Bitmap textLabelBmp = null;
         
@@ -435,8 +436,8 @@ namespace glomp {
 			}
 		}
         
-        public void DrawBox(int offset) {
-            PreRenderBox();
+		public void DrawBox(int offset, float frameDelta) {
+			PreRenderBox(frameDelta);
             
             MoveIntoPosition(true);
 
@@ -540,7 +541,7 @@ namespace glomp {
             GL.PopMatrix();
         }
         
-        private void PreRenderBox() {
+		private void PreRenderBox(float frameDelta) {
 			GL.PushMatrix();
 			GL.PushAttrib (AttribMask.EnableBit); //Remembering attributes
 
@@ -548,12 +549,13 @@ namespace glomp {
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
 
-				Random rnd = new Random ();
-				int random = rnd.Next (0, 3); // creates a random number in the given range
-				currentFrame = (currentFrame + 1 + random);
-				if (currentFrame / 100 > 7)
-					currentFrame = 0;
-				GL.BindTexture (TextureTarget.Texture2D, NodeManager.nodeTextures [NodeManager.DIR_NODE] [currentFrame / 100]); //APPLY TEXTURE TO DIRECTORIES!
+				timeSinceLastFrameChange += frameDelta * 10;
+				if (timeSinceLastFrameChange > 1.6) {
+					timeSinceLastFrameChange = 0;
+					Random rnd = new Random ();
+					currentFrame = rnd.Next (0, 7); // creates a random number in the given range
+				}
+				GL.BindTexture (TextureTarget.Texture2D, NodeManager.nodeTextures [NodeManager.DIR_NODE] [currentFrame]); //APPLY TEXTURE TO DIRECTORIES!
 
 			} else if (isThumbnailed) {
 				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);

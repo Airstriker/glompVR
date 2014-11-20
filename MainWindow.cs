@@ -152,6 +152,10 @@ public partial class MainWindow : Gtk.Window {
 		set { inTransition = value; }
 	}
 
+	public float FrameDelta {
+		get { return frameDelta; }
+		set { frameDelta = value; }
+	}
     
     /* Constructor */
     public MainWindow() : base(Gtk.WindowType.Toplevel) {
@@ -295,7 +299,6 @@ public partial class MainWindow : Gtk.Window {
             frameTimer.Start();
         } else {
             frameDelta = (frameTimer.ElapsedTicks - currentTicks) / 10000000.0f;
-            //frameDelta = 0.01f;
             currentTicks = frameTimer.ElapsedTicks;
         }
         
@@ -309,7 +312,7 @@ public partial class MainWindow : Gtk.Window {
     private void RenderScene() {
 	
 		// Updating camera parameters basing on the used inputDevice. Also passing frameDelta here for fps dependent behavior
-		cam.updateCameraParams (ref mouse, ref frameDelta);
+		cam.updateCameraParams (mouse, frameDelta);
 
 		// Changing projection matrix
 		GL.MatrixMode(MatrixMode.Projection);
@@ -339,7 +342,7 @@ public partial class MainWindow : Gtk.Window {
 		GL.LoadMatrix(ref modelview);
 
 		// Drawing SkyBox
-		skyBox.drawSkyBox(ref frameDelta); //Passing frameDelta for fps dependent animations
+		skyBox.drawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
 
 		GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
 

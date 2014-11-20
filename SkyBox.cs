@@ -228,7 +228,7 @@ namespace glomp
 
 		//Ordinary skyboxes have lightening disabled but this is rather a box than skybox ;)
 		//NOTE! We're also disabling main light (Light0) here
-		private void enableLights(ref float frameDelta)
+		private void enableLights(float frameDelta)
 		{
 			/*
 			GLfloat white[] = {0.8f, 0.8f, 0.8f, 1.0f};
@@ -310,7 +310,7 @@ namespace glomp
 			GL.Enable (EnableCap.Light0); //Main Light
 		}
 
-		public void drawSkyBox(ref float frameDelta)
+		public void drawSkyBox(float frameDelta)
 		{
 			/* In some cases, you might want to disable depth testing and still allow the depth buffer updated while you are rendering your objects.
 			 * It turns out that if you disable depth testing (glDisable(GL_DEPTH_TEST)​), GL also disables writes to the depth buffer.
@@ -347,7 +347,7 @@ namespace glomp
 			GL.Rotate(spotLightDirectionAngle * 5, 1.0f, 1.0f, 1.0f);
 			//GL.Translate(-0.5f, -1.0f, 0.0f);
 
-			this.enableLights (ref frameDelta);
+			this.enableLights (frameDelta);
 
 			///////////////////////////////////////////////////////////////////////////////////////////////////
 			VBOUtil.Draw(vao, vbo);

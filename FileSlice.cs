@@ -383,6 +383,7 @@ namespace glomp {
 				node.IsReadOnly = file.IsReadOnly;
 				node.IsExecutable = (node.FileExtension == "exe");
 
+				/*
 				//Getting file's ThumbNail (using Windows API Code Pack 1.1)
 				ShellObject nodeFile = ShellObject.FromParsingName (fileNodeName);
 				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
@@ -396,6 +397,7 @@ namespace glomp {
 					// then we have a ShellItem that doesn't have a thumbnail (icon only).
 					node.ThumbBmp = null;
 				}
+				*/
 
 				// Creation, last access, and last write time 
 				node.CreationTime = file.CreationTime;
@@ -559,10 +561,10 @@ namespace glomp {
 					float nodeX = sliceX + fileNodes [i].Position.X - 2.1f;
                     float nodeY = sliceY + fileNodes[i].Position.Y;
 					if( /*(nodeZ > parentWindow.GetCamera().Position.Z) && */ //If you don't want to show all the boxes that are behind you - uncomment this line; For VR we need every box to be visible
-                       (culler.isBoxVisible(nodeX, nodeY, nodeZ, 3f, 8f)) ) {
+                       (culler.isBoxVisible(nodeX, nodeY, nodeZ, 3f, 8f)) ) { //TODO: correct culler
                         
                         fileNodes[i].culled = false;
-						fileNodes[i].DrawBox(i);	//the main boxes drawing method
+						fileNodes[i].DrawBox(i, parentWindow.FrameDelta);	//the main boxes drawing method
                     } else {
                         fileNodes[i].culled = true;
                         cullCount++;       

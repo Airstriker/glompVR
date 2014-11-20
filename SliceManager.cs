@@ -228,7 +228,7 @@ namespace glomp {
             culledTotal = 0;
             GL.GetFloat(GetPName.ProjectionMatrix, proj);
             GL.GetFloat(GetPName.ModelviewMatrix, model);
-            culler.CalculateFrustum(model, proj);
+            culler.CalculateFrustum(model, proj); //TODO: correct culler
             
             foreach(FileSlice slice in slices) {
                 slice.Render(culler);
