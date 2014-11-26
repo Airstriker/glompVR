@@ -383,7 +383,6 @@ namespace glomp {
 				node.IsReadOnly = file.IsReadOnly;
 				node.IsExecutable = (node.FileExtension == "exe");
 
-				/*
 				//Getting file's ThumbNail (using Windows API Code Pack 1.1)
 				ShellObject nodeFile = ShellObject.FromParsingName (fileNodeName);
 				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
@@ -397,7 +396,6 @@ namespace glomp {
 					// then we have a ShellItem that doesn't have a thumbnail (icon only).
 					node.ThumbBmp = null;
 				}
-				*/
 
 				// Creation, last access, and last write time 
 				node.CreationTime = file.CreationTime;
@@ -719,7 +717,7 @@ namespace glomp {
         }
         
         
-        public void HideLabels() {
+        public void HideAllNodes() {
             foreach(var fileNode in fileNodes) {
                 fileNode.Dimmed = true;
             }

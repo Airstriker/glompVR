@@ -90,7 +90,7 @@ namespace glomp {
 			activeNodeChildSlice.Position = newSlicePosition;
             
 			//Dimm all nodes in current activeSlice, as it will be replaced with a new one in a second
-			activeSlice.HideLabels();
+			activeSlice.HideAllNodes();
             
 			activeSliceNode = slices.AddLast(activeNodeChildSlice);
 			activeSlice = activeNodeChildSlice;
@@ -172,7 +172,7 @@ namespace glomp {
                 activeSliceNode.Next.Next.Value.Visible = true;
             }
             
-            activeSlice.HideLabels();
+            activeSlice.HideAllNodes();
 
             // set slice above us to be active
             activeSlice = activeSliceNode.Next.Value;
@@ -181,10 +181,7 @@ namespace glomp {
 
             activeSliceHeight++;
 
-            // TODO: Destroy textures of slices more than 1 below
-            
-            
-            
+            // TODO: Destroy textures of slices more than 1 below         
         }
         
         public void MoveDown() {
@@ -204,11 +201,13 @@ namespace glomp {
                 // TODO: Destroy textures of slice more than 1 above
                 // for now just dont render
 
+				/*
                 foreach(var slice in slices) {
                     if(slice.SliceHeight - activeSliceHeight >= 2) {
                         slice.Visible = false;
                     }
                 }
+                */
             }
             
         }

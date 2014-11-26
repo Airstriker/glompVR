@@ -857,16 +857,18 @@ public partial class MainWindow : Gtk.Window {
     private void ToParent(bool clearAbove) {
         inTransition = false;
        
+		sliceToFade = slices.ActiveSlice;
+
         if(clearAbove) {
             slices.MoveDownClear();
         } else {
             slices.MoveDown();   
         }
-        sliceToFade = slices.ActiveSlice;
   
         glwidget1.HasFocus = true;
-        fadeOut = false;
-        inVerticalTransition = true;
+        fadeOut = true;
+		sliceToFade.HideAllNodes();
+		inVerticalTransition = true;
         ChangedActive();
         ActivateTransition();
         statusbar6.Pop(0);

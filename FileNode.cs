@@ -608,7 +608,8 @@ namespace glomp {
         public static void SetBoxState(bool dimmed) {
             if(dimmed) {
                 GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
+				GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent
+				//GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One); //Use this when no texture applied.
                 GL.Disable(EnableCap.CullFace);
                 GL.PushAttrib(AttribMask.FogBit);
                 GL.Disable(EnableCap.Fog);
