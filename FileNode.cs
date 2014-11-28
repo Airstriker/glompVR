@@ -275,10 +275,6 @@ namespace glomp {
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
             
             UpdateBitmap(false);
-            
-            // format the texture
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, textLabelBmp.Width, textLabelBmp.Height, 0,
-            PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero);
          
             // upload data to openGL
             data = textLabelBmp.LockBits(new Rectangle(0, 0, textLabelBmp.Width, textLabelBmp.Height), 
@@ -323,9 +319,6 @@ namespace glomp {
 				*/
 
 				thumbBmp = ResizeBitmap (thumbBmp, 128, 128);
-
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
-                                                                PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero);
                 
                 // upload data to openGL
                 data = thumbBmp.LockBits(new Rectangle(0, 0, thumbBmp.Width, thumbBmp.Height), 
@@ -334,7 +327,8 @@ namespace glomp {
                 
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
                                                         PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
-                thumbBmp.UnlockBits(data);
+                
+				thumbBmp.UnlockBits(data);
                 
 				// set texture parameters
 
@@ -347,6 +341,7 @@ namespace glomp {
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
+
 
 				isThumbnailed = true;
 
