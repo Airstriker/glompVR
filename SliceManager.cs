@@ -6,6 +6,7 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace glomp {
@@ -111,13 +112,7 @@ namespace glomp {
 		public void AddChildSliceToFileNode(FileNode node) {
 			// make new fileSlice, set to active
 			node.ChildSlice = new FileSlice(node.File, activeSliceHeight + 1 , parentWindow);
-
-			ThreadStart starter = new ThreadStart (node.ChildSlice.FillFileSliceWithDirectoriesAndFiles);
-			Thread oThread = new Thread (starter);
-			oThread.Priority = ThreadPriority.Lowest;
-			oThread.IsBackground = true;
-			// Start the thread
-			oThread.Start();
+			node.ChildSlice.FillFileSliceWithDirectoriesAndFiles ();
 		}
 
 

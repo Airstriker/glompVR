@@ -65,6 +65,7 @@
     <Reference Include="GLWidget, Version=1.0.5180.43082, Culture=neutral, PublicKeyToken=null">
       <HintPath>lib\GLWidget.dll</HintPath>
     </Reference>
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">

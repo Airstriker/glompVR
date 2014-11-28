@@ -42,8 +42,6 @@ namespace glomp {
         
         public Vector3 camOffset = new Vector3(5.0f, -12.0f, 32.0f);
 
-		int texture; //TODO delete if not needed
-
         private int gridWidth;
         private int gridHeight;
         private int[] activeBox = {0,0};
@@ -62,8 +60,6 @@ namespace glomp {
         private bool visible = true;
         private MainWindow parentWindow;
         public int cullCount = 0;
-		private bool fileSliceFilled = false; //Will be set to true if the thread has finished filling it with nodes
-		private bool fillingFileSliceInProgress = false;
 		public static readonly bool showHidden = true;
 
         public FileNode[] fileNodes;
@@ -80,16 +76,6 @@ namespace glomp {
                 }
             }
         }
-        
-		public bool FileSliceFilled {
-			get { return fileSliceFilled; }
-			set { fileSliceFilled = value; }
-		}
-
-		public bool FillingFileSliceInProgress {
-			get { return fillingFileSliceInProgress; }
-			set { fillingFileSliceInProgress = value; }
-		}
        
 		public bool ShowAllText {
 			get { return showAllText; }
@@ -137,9 +123,6 @@ namespace glomp {
 			path = _path;
 			sliceHeight = _sliceHeight;
 			parentWindow = parent;
-			fileSliceFilled = false;
-
-			texture = TextureManager.LoadTexture("..\\..\\resources\\skybox_down.bmp"); //TODO delete if not needed
 		}
 
 		public void FillFileSliceWithDrives () {
@@ -192,16 +175,14 @@ namespace glomp {
 
 
 		public void FillFileSliceWithDirectoriesAndFiles () {
-
+		
 			while (parentWindow.InTransition) {
 				//SIMPLY WAIT TILL THE END OF TRANSITION ANIMATION
 				//to eliminate annoying lags (due to disk operations during transition animation)
 			}
 
-			fillingFileSliceInProgress = true;
             // set up storage
 			GetFileNodesCollectionFromLocation(path);
-
 			SetFileSliceParameters ();
         }
 
@@ -210,8 +191,6 @@ namespace glomp {
 
 			if (fileNodes == null) {
 				//nothing to show - directory empty
-				fileSliceFilled = true;
-				fillingFileSliceInProgress = false;
 				return;
 			}
 			else {
@@ -241,9 +220,6 @@ namespace glomp {
 					nodeCount++;
 				}
 			}
-
-			fileSliceFilled = true;
-			fillingFileSliceInProgress = false;
 		}
         
 
@@ -309,9 +285,9 @@ namespace glomp {
 					}
 				}
 				else {
-				Parallel.ForEach(directoriesAndFiles, () => 0, GetFileNode, (c) => {
-					Interlocked.Add(ref fileCount, c);                          
-				});
+					Parallel.ForEach(directoriesAndFiles, () => 0, GetFileNode, (c) => {
+						Interlocked.Add(ref fileCount, c);                          
+					});
 				}
 			}
 			catch (AggregateException ae) {
@@ -411,16 +387,14 @@ namespace glomp {
 			node.SetVBO (NodeManager.vbo [nodeType]);
 			node.SetVAO (NodeManager.vao [nodeType]);
 
-			List<FileNode> fileNodesList = null;
-			if (fileNodes == null) {
-				fileNodesList = new List<FileNode> ();
-			} else {
-				fileNodesList = new List<FileNode> (fileNodes);
-			}
-			fileNodesList.Add (node);
-
-			lock (this) {
-				fileNodes = fileNodesList.ToArray ();
+			lock (this) { //Locking is needed, as file nodes are being created asynchronously by parallel calls from GetFileNodesCollectionFromLocation()
+				if (fileNodes != null) {
+					Array.Resize (ref fileNodes, fileNodes.Length + 1);
+					fileNodes[fileNodes.Length - 1] = node;
+				} else {
+					fileNodes = new FileNode[1];
+					fileNodes [0] = node;
+				}
 			}
 
 			return ++elementsCount;

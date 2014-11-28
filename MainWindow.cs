@@ -16,7 +16,8 @@ using Mono.Unix.Native;
 using glomp;
 using System.Linq;
 using System.Diagnostics.Tracing;
-using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Threading;
 
 
 public partial class MainWindow : Gtk.Window {
@@ -110,7 +111,6 @@ public partial class MainWindow : Gtk.Window {
     private float activeRotateValue = 0.0f;
     private float frameDelta = 0.0005f;
     
-	private bool nodeActivated = false;
     private bool inTransition = false;
     private bool inVerticalTransition = false;
     private Vector3 camTransitionTarget;
@@ -142,6 +142,8 @@ public partial class MainWindow : Gtk.Window {
     private float[] backgroundColour = (float[])BACKGROUND.Clone();
     private bool heightCueEnabled = true;
     private int culledThisFrame = 0;
+
+	static Dispatcher MainThreadDispatcher;
     
     private LinkedList<SliceManager> sceneList = new LinkedList<SliceManager>();
 	private SliceManager slices;
@@ -191,6 +193,8 @@ public partial class MainWindow : Gtk.Window {
         completion.Model = store;
         completion.MinimumKeyLength = 1;
         glwidget1.GrabFocus();
+
+		MainThreadDispatcher = Dispatcher.CurrentDispatcher;
     }
    
 
@@ -371,16 +375,11 @@ public partial class MainWindow : Gtk.Window {
         // apply scale animation to fileslice
         DoScaleTransition();
 
-		if (nodeActivated) {
-			CheckIfChildSliceFilled();
-		}
-
         // rotate active box
         if(slices.ActiveSlice.NumFiles > 0) {
             slices.ActiveSlice.GetActiveNode().RotY = activeRotateValue;
         }
         
-       
         activeRotateValue += 150.0f * frameDelta;
 
         if(activeRotateValue > 0.0f) {
@@ -608,16 +607,6 @@ public partial class MainWindow : Gtk.Window {
         }
         
     }
-    
-
-	private void CheckIfChildSliceFilled() {
-		FileNode activeNode = slices.ActiveSlice.GetActiveNode();
-		if (activeNode.ChildSlice != null && !activeNode.ChildSlice.FillingFileSliceInProgress && activeNode.ChildSlice.FileSliceFilled) {
-			nodeActivated = false;
-			activeNode.NodeActivated = false;
-			NodeActivated ();
-		}
-	}
 
 
     private void DoScaleTransition() {
@@ -814,18 +803,13 @@ public partial class MainWindow : Gtk.Window {
         statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
     }
         
-    private void NodeActivated() {
+    private async void NodeActivated() {
 		Trace.WriteLine ("NodeActivated");
-		if (nodeActivated) {
-			return;
-		}
         FileNode activeNode = slices.ActiveSlice.GetActiveNode();
         if(activeNode.IsDirectory) {
 			if (activeNode.ChildSlice == null) {
 				activeNode.NodeActivated = true;
-				nodeActivated = true;
-				slices.AddChildSliceToFileNode (activeNode);
-				return;
+				await Task.Run(() => slices.AddChildSliceToFileNode (activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
 			}
 			if(activeNode.ChildSlice.NumFiles == 0) {
                 glwidget1.HasFocus = true;
@@ -837,7 +821,7 @@ public partial class MainWindow : Gtk.Window {
             fadeOut = true;
 			scaleIn = true;
             sliceToFade = slices.ActiveSlice;
-			slices.AddSliceAbove(activeNode.ChildSlice);
+			await MainThreadDispatcher.InvokeAsync(() => slices.AddSliceAbove(activeNode.ChildSlice)); //dispatches work to the UI thread (this is needed due to OpenGL calls in this method (Texture Generation)!). MainThreadDispatcher is set at MainWindow() constructor. Look here for the explanation: http://www.opentk.com/node/3841
 			slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
             ChangedActive();
             ActivateTransition();
