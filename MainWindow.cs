@@ -8,6 +8,7 @@ using System;
 using GLib;
 using System.Collections.Generic;
 using Gtk;
+using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK;
 using System.Diagnostics;
