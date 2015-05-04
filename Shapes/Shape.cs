@@ -11,6 +11,7 @@ public abstract class Shape
     private Vector2[] texcoords;
     private int[] indices;
     private int[] colors;
+	private float[] vertexData;
 
     public Vector3[] Vertices
     {
@@ -56,4 +57,13 @@ public abstract class Shape
             colors = value;
         }
     }
+
+	public float[] VertexData
+	{
+		get { return vertexData; }
+		protected set
+		{
+			vertexData = value;
+		}
+	}
 }

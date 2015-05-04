@@ -9,14 +9,11 @@ namespace glomp
 		public struct Vbo
 		{
 			public int VertexBufferID;
-			public int ColorBufferID;
-			public int TexCoordBufferID;
-			public int NormalBufferID;
 			public int ElementBufferID;
 			public int NumElements;
 		}
 
-		private static int previouslyUsedVao = 0;
+		private static int previouslyUsedVao = -1;
 
 		public VBOUtil ()
 		{
@@ -30,117 +27,43 @@ namespace glomp
 		{
 			Vbo vbo = new Vbo();
 
-			if (shape.Vertices == null) return vbo;
-			if (shape.Indices == null) return vbo;
-
-			int bufferSize;
-
-			// Color Array Buffer
-			if (shape.Colors != null)
+			if (shape.VertexData == null)
+				return vbo;
+			if (shape.Indices == null)
+				return vbo;
+				
 			{
 				// Generate Array Buffer Id
-				GL.GenBuffers(1, out vbo.ColorBufferID);
+				GL.GenBuffers (1, out vbo.VertexBufferID);
 
 				// Bind current context to Array Buffer ID
-				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.ColorBufferID);
+				GL.BindBuffer (BufferTarget.ArrayBuffer, vbo.VertexBufferID);
 
 				// Send data to buffer
-				GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(shape.Colors.Length * sizeof(int)), shape.Colors, BufferUsageHint.StaticDraw);
-
-				// Validate that the buffer is the correct size
-				GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out bufferSize);
-				if (shape.Colors.Length * sizeof(int) != bufferSize)
-					throw new ApplicationException("Vertex array not uploaded correctly");
+				GL.BufferData (BufferTarget.ArrayBuffer, (IntPtr)(shape.VertexData.Length * sizeof(float)), shape.VertexData, BufferUsageHint.StaticDraw);
 
 				// Clear the buffer Binding
-				GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-			}
-
-			// Normal Array Buffer
-			if (shape.Normals != null)
-			{
-				// Generate Array Buffer Id
-				GL.GenBuffers(1, out vbo.NormalBufferID);
-
-				// Bind current context to Array Buffer ID
-				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.NormalBufferID);
-
-				// Send data to buffer
-				GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(shape.Normals.Length * Vector3.SizeInBytes), shape.Normals, BufferUsageHint.StaticDraw);
-
-				// Validate that the buffer is the correct size
-				GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out bufferSize);
-				if (shape.Normals.Length * Vector3.SizeInBytes != bufferSize)
-					throw new ApplicationException("Normal array not uploaded correctly");
-
-				// Clear the buffer Binding
-				GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-			}
-
-			// TexCoord Array Buffer
-			if (shape.Texcoords != null)
-			{
-				// Generate Array Buffer Id
-				GL.GenBuffers(1, out vbo.TexCoordBufferID);
-
-				// Bind current context to Array Buffer ID
-				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.TexCoordBufferID);
-
-				// Send data to buffer
-				GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(shape.Texcoords.Length * Vector2.SizeInBytes), shape.Texcoords, BufferUsageHint.StaticDraw);
-
-				// Validate that the buffer is the correct size
-				GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out bufferSize);
-				if (shape.Texcoords.Length * Vector2.SizeInBytes != bufferSize)
-					throw new ApplicationException("TexCoord array not uploaded correctly");
-
-				// Clear the buffer Binding
-				GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-			}
-
-			// Vertex Array Buffer
-			{
-				// Generate Array Buffer Id
-				GL.GenBuffers(1, out vbo.VertexBufferID);
-
-				// Bind current context to Array Buffer ID
-				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.VertexBufferID);
-
-				// Send data to buffer
-				GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(shape.Vertices.Length * Vector3.SizeInBytes), shape.Vertices, BufferUsageHint.StaticDraw);
-
-				// Validate that the buffer is the correct size
-				GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out bufferSize);
-				if (shape.Vertices.Length * Vector3.SizeInBytes != bufferSize)
-					throw new ApplicationException("Vertex array not uploaded correctly");
-
-				// Clear the buffer Binding
-				GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+				GL.BindBuffer (BufferTarget.ArrayBuffer, 0);
 			}
 
 			// Element Array Buffer
 			{
 				// Generate Array Buffer Id
-				GL.GenBuffers(1, out vbo.ElementBufferID);
+				GL.GenBuffers (1, out vbo.ElementBufferID);
 
 				// Bind current context to Array Buffer ID
-				GL.BindBuffer(BufferTarget.ElementArrayBuffer, vbo.ElementBufferID);
+				GL.BindBuffer (BufferTarget.ElementArrayBuffer, vbo.ElementBufferID);
 
 				// Send data to buffer
-				GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(shape.Indices.Length * sizeof(int)), shape.Indices, BufferUsageHint.StaticDraw);
-
-				// Validate that the buffer is the correct size
-				GL.GetBufferParameter(BufferTarget.ElementArrayBuffer, BufferParameterName.BufferSize, out bufferSize);
-				if (shape.Indices.Length * sizeof(int) != bufferSize)
-					throw new ApplicationException("Element array not uploaded correctly");
+				GL.BufferData (BufferTarget.ElementArrayBuffer, (IntPtr)(shape.Indices.Length * sizeof(int)), shape.Indices, BufferUsageHint.StaticDraw);
 
 				// Clear the buffer Binding
-				GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+				GL.BindBuffer (BufferTarget.ElementArrayBuffer, 0);
 			}
 
 			// Store the number of elements for the DrawElements call
 			vbo.NumElements = shape.Indices.Length;
-
+			
 			return vbo;
 		}
 
@@ -162,42 +85,35 @@ namespace glomp
 			GL.GenVertexArrays(1, out vao);
 			GL.BindVertexArray(vao);
 
-			// Normal Array Buffer
-			if (vbo.NormalBufferID != 0)
-			{
-				// Bind to the Array Buffer ID
-				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.NormalBufferID);
-
-				// Set the Pointer to the current bound array describing how the data ia stored
-				GL.NormalPointer(NormalPointerType.Float, Vector3.SizeInBytes, IntPtr.Zero);
-
-				// Enable the client state so it will use this array buffer pointer
-				GL.EnableClientState(ArrayCap.NormalArray);
-			}
-
-			// Texture Array Buffer
-			if (vbo.TexCoordBufferID != 0)
-			{
-				// Bind to the Array Buffer ID
-				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.TexCoordBufferID);
-
-				// Set the Pointer to the current bound array describing how the data ia stored
-				GL.TexCoordPointer(2, TexCoordPointerType.Float, Vector2.SizeInBytes, IntPtr.Zero);
-
-				// Enable the client state so it will use this array buffer pointer
-				GL.EnableClientState(ArrayCap.TextureCoordArray);
-			}
-				
 			// Vertex Array Buffer
 			{
 				// Bind to the Array Buffer ID
 				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.VertexBufferID);
 
+				GL.EnableVertexAttribArray (0); //Position
+				GL.VertexAttribPointer (0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), IntPtr.Zero);
+
+				GL.EnableVertexAttribArray (1); //Texture Coordinates
+				GL.VertexAttribPointer (1, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), (IntPtr)(IntPtr.Zero + 3 * sizeof(float)));
+
+				GL.EnableVertexAttribArray (2); //Normal
+				GL.VertexAttribPointer (2, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), (IntPtr)(IntPtr.Zero + 3 * sizeof(float) + 2 * sizeof(float)));
+
+
+				//TO BE REMOVED WHEN SHADERS ARE INTRODUCED
+				/*
 				// Set the Pointer to the current bound array describing how the data ia stored
-				GL.VertexPointer(3, VertexPointerType.Float, Vector3.SizeInBytes, IntPtr.Zero);
+				GL.TexCoordPointer(2, TexCoordPointerType.Float, 8 * sizeof(float), (IntPtr)(IntPtr.Zero + 3 * sizeof(float)));
 
 				// Enable the client state so it will use this array buffer pointer
-				GL.EnableClientState(ArrayCap.VertexArray);
+				GL.EnableClientState(ArrayCap.TextureCoordArray);
+
+				// Set the Pointer to the current bound array describing how the data ia stored
+				GL.NormalPointer(NormalPointerType.Float, 8 * sizeof(float), (IntPtr)(IntPtr.Zero + 3 * sizeof(float) + 2 * sizeof(float)));
+
+				// Enable the client state so it will use this array buffer pointer
+				GL.EnableClientState(ArrayCap.NormalArray);
+				*/
 			}
 
 			// Element Array Buffer
@@ -212,90 +128,48 @@ namespace glomp
 		}
 
 
-		//Draw using VBO only
-		[Obsolete ("Use Draw(int vao, VBOUtil.Vbo vbo) instead.")]
-		public static void Draw(VBOUtil.Vbo vbo)
+		public static void ConfigureVertexArrayObjectForLabels(out int vao, VBOUtil.Vbo vbo)
 		{
-			// Push current Array Buffer state so we can restore it later
-			//GL.PushClientAttrib(ClientAttribMask.ClientVertexArrayBit);
-
-			if (vbo.VertexBufferID == 0) return;
-			if (vbo.ElementBufferID == 0) return;
-
-			if (GL.IsEnabled(EnableCap.Lighting))
-			{
-				// Normal Array Buffer
-				if (vbo.NormalBufferID != 0)
-				{
-					// Bind to the Array Buffer ID
-					GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.NormalBufferID);
-
-					// Set the Pointer to the current bound array describing how the data ia stored
-					GL.NormalPointer(NormalPointerType.Float, Vector3.SizeInBytes, IntPtr.Zero);
-
-					// Enable the client state so it will use this array buffer pointer
-					GL.EnableClientState(ArrayCap.NormalArray);
-				}
-			}
-			else
-			{
-				// Color Array Buffer (Colors not used when lighting is enabled)
-				if (vbo.ColorBufferID != 0)
-				{
-					// Bind to the Array Buffer ID
-					GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.ColorBufferID);
-
-					// Set the Pointer to the current bound array describing how the data ia stored
-					GL.ColorPointer(4, ColorPointerType.UnsignedByte, sizeof(int), IntPtr.Zero);
-
-					// Enable the client state so it will use this array buffer pointer
-					GL.EnableClientState(ArrayCap.ColorArray);
-				}
+			if (vbo.VertexBufferID == 0 || vbo.ElementBufferID == 0) {
+				vao = 0;
+				return;
 			}
 
-			// Texture Array Buffer
-			if (GL.IsEnabled(EnableCap.Texture2D))
-			{
-				if (vbo.TexCoordBufferID != 0)
-				{
-					// Bind to the Array Buffer ID
-					GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.TexCoordBufferID);
-
-					// Set the Pointer to the current bound array describing how the data ia stored
-					GL.TexCoordPointer(2, TexCoordPointerType.Float, Vector2.SizeInBytes, IntPtr.Zero);
-
-					// Enable the client state so it will use this array buffer pointer
-					GL.EnableClientState(ArrayCap.TextureCoordArray);
-				}
-			}
+			// Create and bind the vertex array object.
+			GL.GenVertexArrays(1, out vao);
+			GL.BindVertexArray(vao);
 
 			// Vertex Array Buffer
 			{
 				// Bind to the Array Buffer ID
 				GL.BindBuffer(BufferTarget.ArrayBuffer, vbo.VertexBufferID);
 
+				GL.EnableVertexAttribArray (0); //Position
+				GL.VertexAttribPointer (0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), IntPtr.Zero);
+
+				GL.EnableVertexAttribArray (1); //Texture Coordinates
+				GL.VertexAttribPointer (1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), (IntPtr)(IntPtr.Zero + 3 * sizeof(float)));
+
+
+				//TO BE REMOVED WHEN SHADERS ARE INTRODUCED
+				/*
 				// Set the Pointer to the current bound array describing how the data ia stored
-				GL.VertexPointer(3, VertexPointerType.Float, Vector3.SizeInBytes, IntPtr.Zero);
+				GL.TexCoordPointer(2, TexCoordPointerType.Float, 5 * sizeof(float), (IntPtr)(IntPtr.Zero + 3 * sizeof(float)));
 
 				// Enable the client state so it will use this array buffer pointer
-				GL.EnableClientState(ArrayCap.VertexArray);
+				GL.EnableClientState(ArrayCap.TextureCoordArray);
+				*/
 			}
 
 			// Element Array Buffer
 			{
 				// Bind to the Array Buffer ID
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, vbo.ElementBufferID);
-
-				// Draw the elements in the element array buffer
-				// Draws up items in the Color, Vertex, TexCoordinate, and Normal Buffers using indices in the ElementArrayBuffer
-				GL.DrawElements(PrimitiveType.Triangles, vbo.NumElements, DrawElementsType.UnsignedInt, IntPtr.Zero);
-
-				// Could also call GL.DrawArrays which would ignore the ElementArrayBuffer and just use primitives
-				// Of course we would have to reorder our data to be in the correct primitive order
 			}
 
-			// Restore the state
-			//GL.PopClientAttrib();
+			// Bind back to the default state.
+			GL.BindBuffer(BufferTarget.ArrayBuffer,0);
+			GL.BindVertexArray(0);
 		}
 
 

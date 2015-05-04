@@ -21,7 +21,7 @@ namespace glomp {
 
         ~FrustumCullerPlane ()
         {
-            //Console.WriteLine ("FCP dying");
+			//System.Diagnostics.Debug.WriteLine ("FCP dying");
         }
 
         public float GetDistance(float x, float y, float z) 
@@ -47,7 +47,7 @@ namespace glomp {
 
         ~FrustumCuller ()
         {
-            //Console.WriteLine ("FC dying");
+			//System.Diagnostics.Debug.WriteLine ("FC dying");
         }
 
         public void CalculateFrustum (float[] md, float[] proj)

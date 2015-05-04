@@ -35,10 +35,6 @@ namespace glomp {
         public static readonly int BY_TYPE = 0;
         public static readonly int BY_NAME = 1;
         public static readonly int BY_DATE = 2;
-
-		public static readonly int FILE_NODE = 0;
-		public static readonly int DIR_NODE = 1;
-		public static readonly int DRIVE_NODE = 2;
         
         public Vector3 camOffset = new Vector3(5.0f, -12.0f, 32.0f);
 
@@ -46,7 +42,7 @@ namespace glomp {
         private int gridHeight;
         private int[] activeBox = {0,0};
         private bool showAllText = false;      
-        private FileNode toNode;
+        private Node toNode;
 		private int numFiles = 0;
         private String path;
         private int sliceHeight;
@@ -61,9 +57,19 @@ namespace glomp {
         private MainWindow parentWindow;
         public int cullCount = 0;
 		public static readonly bool showHidden = true;
+        public Node[] fileNodes;
 
-        public FileNode[] fileNodes;
+		//Shaders related stuff
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////
+		private Matrix4 fileSliceModelMatrix = Matrix4.Identity;
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////
         
+
+		public Matrix4 FileSliceModelMatrix {
+			get { return fileSliceModelMatrix; }
+			set { fileSliceModelMatrix = value; }
+		}
+
         public float Alpha {
             get { return alpha; }
             set {
@@ -129,9 +135,7 @@ namespace glomp {
 			DriveInfo[] drives;
 			drives = DriveInfo.GetDrives();
 			foreach (DriveInfo drive in drives) {
-				FileNode node = new FileNode (drive.Name);
-				node.IsDirectory = true;
-				node.IsDrive = true;
+				DriveNode node = new DriveNode (drive.Name);
 
 				DirectoryInfo directory = new DirectoryInfo (drive.Name); //"converting" drive to directory
 
@@ -139,7 +143,7 @@ namespace glomp {
 					node.NumDirs = directory.EnumerateDirectories ().Count ();
 					node.NumFiles = directory.EnumerateFiles ().Count ();
 					node.NumChildren = node.NumDirs + node.NumFiles;
-					node.DirHeight = NodeManager.GetHeightForFolder (node.NumChildren);
+					node.DirHeight = node.GetHeightForFolder (node.NumChildren);
 				} catch {
 					node.NumChildren = 0;
 					node.DirHeight = 1f;
@@ -153,16 +157,11 @@ namespace glomp {
 				node.File = drive.Name;
 				node.SetParent (this);
 
-				//Assigning VBO for node
-				//node.SetDisplayList (NodeManager.displayLists [DRIVE_NODE]);
-				node.SetVBO(NodeManager.vbo [DRIVE_NODE]);
-				node.SetVAO(NodeManager.vao [DRIVE_NODE]);
-
-				List<FileNode> fileNodesList = null;
+				List<Node> fileNodesList = null;
 				if (fileNodes == null) {
-					fileNodesList = new List<FileNode> ();
+					fileNodesList = new List<Node> ();
 				} else {
-					fileNodesList = new List<FileNode> (fileNodes);
+					fileNodesList = new List<Node> (fileNodes);
 				}
 				fileNodesList.Add (node);
 				fileNodes = fileNodesList.ToArray();
@@ -263,14 +262,14 @@ namespace glomp {
 			}
 			// Thrown if we do not have discovery permission on the directory. 
 			catch (UnauthorizedAccessException e) {
-				Console.WriteLine(e.Message);
+				System.Diagnostics.Debug.WriteLine(e.Message);
 			}
 			// Thrown if another process has deleted the directory after we retrieved its name. 
 			catch (DirectoryNotFoundException e) {
-				Console.WriteLine(e.Message);
+				System.Diagnostics.Debug.WriteLine(e.Message);
 			}
 			catch (IOException e) {
-				Console.WriteLine(e.Message);
+				System.Diagnostics.Debug.WriteLine(e.Message);
 			}
 
 			// Execute in parallel if there are enough files in the directory. 
@@ -294,7 +293,7 @@ namespace glomp {
 				ae.Handle((ex) => {
 					if (ex is UnauthorizedAccessException) {
 						// Here we just output a message and go on.
-						Console.WriteLine(ex.Message);
+						System.Diagnostics.Debug.WriteLine(ex.Message);
 						return true;
 					}
 					// Handle other exceptions here if necessary... 
@@ -318,59 +317,52 @@ namespace glomp {
 
 			DirectoryInfo folder = null;
 			FileInfo file = null;
-			FileNode node = null;
-
-			int nodeType = FILE_NODE;
+			Node node = null;
 
 			// Determine if entry is really a directory
 			if ((element.Attributes & FileAttributes.Directory) == FileAttributes.Directory) {
-				nodeType = DIR_NODE;
-			}
-
-			if (nodeType == DIR_NODE) {
 				folder = (DirectoryInfo)element;
 				fileNodeBaseName = folder.Name;
 				fileNodeName = folder.FullName;
-				node = new FileNode (fileNodeBaseName);
-				node.IsDirectory = true;
+				node = new DirectoryNode (fileNodeBaseName);
 
 				try {
-					node.NumDirs = folder.EnumerateDirectories ().Count ();
-					node.NumFiles = folder.EnumerateFiles ().Count ();
-					node.NumChildren = node.NumDirs + node.NumFiles;
-					node.DirHeight = NodeManager.GetHeightForFolder (node.NumChildren);
+					((DirectoryNode)node).NumDirs = folder.EnumerateDirectories ().Count ();
+					((DirectoryNode)node).NumFiles = folder.EnumerateFiles ().Count ();
+					((DirectoryNode)node).NumChildren = ((DirectoryNode)node).NumDirs + ((DirectoryNode)node).NumFiles;
+					((DirectoryNode)node).DirHeight = ((DirectoryNode)node).GetHeightForFolder (((DirectoryNode)node).NumChildren);
 				} catch {
-					node.NumChildren = 0;
-					node.DirHeight = 1f;
+					((DirectoryNode)node).NumChildren = 0;
+					((DirectoryNode)node).DirHeight = 1f;
 				}
 
-				// Creation, last access, and last write time 
+				// Creation, last access, and last write time
 				node.CreationTime = folder.CreationTime;
 				node.LastAccessTime = folder.LastAccessTime;
 				node.ModifyTime = folder.LastWriteTime;
 
-			} else if (nodeType == FILE_NODE) {
+			} else { //FileNode
 				file = (FileInfo)element;
 				fileNodeBaseName = file.Name;
 				fileNodeName = file.FullName;
 				node = new FileNode (fileNodeBaseName);
-				node.FileExtension = (file.Extension != string.Empty) ? file.Extension.Substring (1) : string.Empty; //without dot
-				node.Description = NodeManager.GetMIMEDescription (file.Extension); //This will show what type of file it is
-				node.IsReadOnly = file.IsReadOnly;
-				node.IsExecutable = (node.FileExtension == "exe");
+				((FileNode)node).FileExtension = (file.Extension != string.Empty) ? file.Extension.Substring (1) : string.Empty; //without dot
+				((FileNode)node).Description = ((FileNode)node).GetMIMEDescription (file.Extension); //This will show what type of file it is
+				((FileNode)node).IsReadOnly = file.IsReadOnly;
+				((FileNode)node).IsExecutable = (((FileNode)node).FileExtension == "exe");
 
 				//Getting file's ThumbNail (using Windows API Code Pack 1.1)
 				ShellObject nodeFile = ShellObject.FromParsingName (fileNodeName);
 				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
 				try {
-					node.ThumbBmp = nodeFile.Thumbnail.Bitmap;
+					((FileNode)node).ThumbBmp = nodeFile.Thumbnail.Bitmap;
 				} catch {
 					//NotSupportedException
-					Console.WriteLine ("Error getting the thumbnail. The selected file does not have a valid thumbnail or thumbnail handler.");
+					System.Diagnostics.Debug.WriteLine ("Error getting the thumbnail. The selected file does not have a valid thumbnail or thumbnail handler.");
 
 					// If we get an InvalidOperationException and our mode is Mode.ThumbnailOnly,
 					// then we have a ShellItem that doesn't have a thumbnail (icon only).
-					node.ThumbBmp = null;
+					((FileNode)node).ThumbBmp = null;
 				}
 
 				// Creation, last access, and last write time 
@@ -382,17 +374,12 @@ namespace glomp {
 			node.File = fileNodeName;
 			node.SetParent (this);
 
-			//Assigning VBO for node
-			//node.SetDisplayList (NodeManager.displayLists [nodeType]);
-			node.SetVBO (NodeManager.vbo [nodeType]);
-			node.SetVAO (NodeManager.vao [nodeType]);
-
 			lock (this) { //Locking is needed, as file nodes are being created asynchronously by parallel calls from GetFileNodesCollectionFromLocation()
 				if (fileNodes != null) {
 					Array.Resize (ref fileNodes, fileNodes.Length + 1);
 					fileNodes[fileNodes.Length - 1] = node;
 				} else {
-					fileNodes = new FileNode[1];
+					fileNodes = new Node[1];
 					fileNodes [0] = node;
 				}
 			}
@@ -437,7 +424,7 @@ namespace glomp {
             
             int genCounter = 0;
             int destCounter = 0;
-            FileNode myNode = null;
+            Node myNode = null;
             
             // for all visible nodes
             for(int y = minBox[Y]; y < maxBox[Y]; y++) {
@@ -484,8 +471,8 @@ namespace glomp {
                  }
             }
             
-            System.Console.WriteLine("Generated " + genCounter + " textures.");
-            System.Console.WriteLine("Destroyed " + destCounter + " textures.");
+			System.Diagnostics.Debug.WriteLine("Generated " + genCounter + " textures.");
+			System.Diagnostics.Debug.WriteLine("Destroyed " + destCounter + " textures.");
         }
         
      
@@ -504,7 +491,11 @@ namespace glomp {
 
 				GL.Disable (EnableCap.DepthTest);
 				GL.Enable (EnableCap.Texture2D);
+				// bind texture to texture unit 0
+				GL.ActiveTexture(TextureUnit.Texture0);
 				GL.BindTexture(TextureTarget.Texture2D, texture);
+				// set texture uniform
+				GL.Uniform1(MainWindow.texture_location, 0);
 				GL.Begin(PrimitiveType.Quads);
 				float numberOfTextureRepeats = 30.0f;
 				float mSize = 500.0f;
@@ -525,9 +516,10 @@ namespace glomp {
 				GL.PopMatrix();
 				*/
 
-				GL.PushMatrix ();
-                MoveIntoPosition(false);
-                FileNode.SetBoxState(isDimmed);
+				fileSliceModelMatrix = parentWindow.GetCamera().CameraModelMatrix;
+
+				MoveIntoPosition(false, ref fileSliceModelMatrix);
+                Node.SetBoxState(isDimmed);
                 for(int i = fileNodes.Length-1; i >= 0; i--) {
                     float nodeZ = sliceZ + fileNodes[i].Position.Z;
 					float nodeX = sliceX + fileNodes [i].Position.X - 2.1f;
@@ -542,16 +534,15 @@ namespace glomp {
                         cullCount++;       
                     } 
                 }
-                FileNode.UnsetBoxState(isDimmed);
+                Node.UnsetBoxState(isDimmed);
                 
-                FileNode.SetTextState(isDimmed);
+                Node.SetTextState(isDimmed);
                 for(int i = fileNodes.Length-1; i >= 0; i--) {
                     if(!fileNodes[i].culled) {
                         fileNodes[i].DrawLabel();
                     }
                 }
-                FileNode.UnsetTextState(isDimmed);
-				GL.PopMatrix();
+                Node.UnsetTextState(isDimmed);
             }
         }
         
@@ -560,11 +551,11 @@ namespace glomp {
         }
         
         
-        public FileNode GetActiveNode() {
-            if(fileNodes.Length > 0)
-                return fileNodes[(activeBox[Y] * gridWidth) + activeBox[X]];
-            else 
-                return new FileNode(this.Position);
+        public Node GetActiveNode() {
+			if (fileNodes.Length > 0)
+				return fileNodes [(activeBox [Y] * gridWidth) + activeBox [X]];
+			else
+				return null; // new Node(this.Position);
         }
         
         
@@ -610,7 +601,7 @@ namespace glomp {
         public Vector3 FindNodePosition(String file) {
             for( int i = 0; i < fileNodes.Length; i++) {
                 if(fileNodes[i].File == file) {
-                    System.Console.WriteLine("Found " + file);
+					System.Diagnostics.Debug.WriteLine("Found " + file);
                     return fileNodes[i].Position;
                 }
             }
@@ -621,7 +612,7 @@ namespace glomp {
         public Vector3 ActivateNode(String file) {
            for( int i = 0; i < fileNodes.Length; i++) {
                 if(fileNodes[i].File == file) {
-                    System.Console.WriteLine("Found " + file);
+					System.Diagnostics.Debug.WriteLine("Found " + file);
                     GoToNode(i);
                     return fileNodes[i].Position;
                 }
@@ -709,7 +700,7 @@ namespace glomp {
         
         
         private void SortName() {
-            Array.Sort(fileNodes, delegate(FileNode node1, FileNode node2) {
+            Array.Sort(fileNodes, delegate(Node node1, Node node2) {
                 if(node1.IsDirectory == node2.IsDirectory) {
                     return node1.FileName.CompareTo(node2.FileName);
                 } else {
@@ -724,32 +715,38 @@ namespace glomp {
         
         
         private void SortType() {
-            Array.Sort(fileNodes, delegate(FileNode node1, FileNode node2) {
-                int compareVal = node1.Description.CompareTo(node2.Description);
-                if(compareVal == 0) {
-                    String ext1, ext2;
-                    try { 
-                        String[] split1 = node1.FileName.Split('.');
-                        String[] split2 = node2.FileName.Split('.');
-                        ext1 = split1[split1.Length-1];
-                        ext2 = split2[split2.Length-1];
-                    } catch {
-                        return node1.FileName.CompareTo(node2.FileName);
-                    }
-                    compareVal = ext1.CompareTo(ext2);
-                    if(compareVal == 0) {
-                        return node1.FileName.CompareTo(node2.FileName);
-                    } else {
-                        return compareVal;
-                    }
-                } else {
-                    return compareVal;
-                }
+            Array.Sort(fileNodes, delegate(Node node1, Node node2) {
+				if ((node1 is FileNode) && (node2 is FileNode)) {
+					int compareVal = ((FileNode)node1).Description.CompareTo(((FileNode)node2).Description);
+	                if(compareVal == 0) {
+	                    String ext1, ext2;
+	                    try { 
+	                        String[] split1 = node1.FileName.Split('.');
+	                        String[] split2 = node2.FileName.Split('.');
+	                        ext1 = split1[split1.Length-1];
+	                        ext2 = split2[split2.Length-1];
+	                    } catch {
+	                        return node1.FileName.CompareTo(node2.FileName);
+	                    }
+	                    compareVal = ext1.CompareTo(ext2);
+	                    if(compareVal == 0) {
+	                        return node1.FileName.CompareTo(node2.FileName);
+	                    } else {
+	                        return compareVal;
+	                    }
+	                } else {
+	                    return compareVal;
+	                }
+				} else if ((node1 is DirectoryNode) && (node2 is FileNode)) {
+					return -1; //Directories first
+				} else { //node1 is a Directory and node2 is a Directory
+					return node1.FileName.CompareTo(node2.FileName);
+				}
             });   
         }
         
         private void SortDate() {
-            Array.Sort(fileNodes, delegate(FileNode node1, FileNode node2) {
+            Array.Sort(fileNodes, delegate(Node node1, Node node2) {
                 if(node1.IsDirectory == node2.IsDirectory) {
                     return node1.ModifyTime.CompareTo(node2.ModifyTime);
                 } else {
@@ -763,11 +760,11 @@ namespace glomp {
         }
         
         public void FadeDirectories(bool fadeOut) {
-            foreach(FileNode node in fileNodes) {
+            foreach(Node node in fileNodes) {
                 if(node.IsDirectory) {
-                    node.DirFaded = fadeOut;
+					((DirectoryNode)node).DirFaded = fadeOut;
                     if(fadeOut) {
-                        node.FadeAmount = 0.1f;
+						((DirectoryNode)node).FadeAmount = 0.1f;
                     }
                 }
             }
@@ -777,11 +774,11 @@ namespace glomp {
             for(int i = 0; i < fileNodes.Length; i++) {
                 if(fileNodes[i].IsDirectory) {
                     if(i / gridWidth < activeBox[1])  { // if we are behind current active
-                        fileNodes[i].DirFaded = true;
-                        fileNodes[i].FadeAmount = 0.3f;
+						((DirectoryNode)fileNodes[i]).DirFaded = true;
+						((DirectoryNode)fileNodes[i]).FadeAmount = 0.3f;
                         
                     } else {
-                        fileNodes[i].DirFaded = false;
+						((DirectoryNode)fileNodes[i]).DirFaded = false;
                     }
                 }
             }

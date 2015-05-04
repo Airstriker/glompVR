@@ -109,7 +109,7 @@ namespace glomp {
 		}
 
 
-		public void AddChildSliceToFileNode(FileNode node) {
+		public void AddChildSliceToFileNode(Node node) {
 			// make new fileSlice, set to active
 			node.ChildSlice = new FileSlice(node.File, activeSliceHeight + 1 , parentWindow);
 			node.ChildSlice.FillFileSliceWithDirectoriesAndFiles ();
@@ -159,7 +159,7 @@ namespace glomp {
         public void MoveUp() {
 			// Check if there is a slice above us to move up to
             if(activeSliceNode == slices.Last) {
-                System.Console.WriteLine("Denying move up, no upper slice!");
+				System.Diagnostics.Debug.WriteLine("Denying move up, no upper slice!");
                 return;
             }
             //before doing anything set the slice 2 above to visible
@@ -182,7 +182,7 @@ namespace glomp {
         public void MoveDown() {
             // check if there is slice below, if not create it!
             if(activeSliceNode == slices.First) {
-                System.Console.WriteLine("Creating new slice below");
+				System.Diagnostics.Debug.WriteLine("Creating new slice below");
                 AddSliceBelow();
             } else {
                 // just move down
@@ -217,12 +217,16 @@ namespace glomp {
        
         
         public override void Render() {
-            float[] model = new float[16];
+            float[] modelView = new float[16];
             float[] proj = new float[16];
             culledTotal = 0;
-            GL.GetFloat(GetPName.ProjectionMatrix, proj);
-            GL.GetFloat(GetPName.ModelviewMatrix, model);
-            culler.CalculateFrustum(model, proj); //TODO: correct culler
+            //GL.GetFloat(GetPName.ProjectionMatrix, proj);
+            //GL.GetFloat(GetPName.ModelviewMatrix, model);
+			Matrix4 modelViewMatrix = parentWindow.GetCamera().CameraModelMatrix * ShadersCommonProperties.viewMatrix;
+			Util.MatrixToFloatArray(modelViewMatrix, ref modelView);
+			Util.MatrixToFloatArray(ShadersCommonProperties.projectionMatrix, ref proj);
+
+            culler.CalculateFrustum(modelView, proj); //TODO: correct culler
             
             foreach(FileSlice slice in slices) {
                 slice.Render(culler);

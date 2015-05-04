@@ -14,13 +14,13 @@ namespace glomp
 			errorMsg = errorMsg + args.ExceptionObject.ToString() + "\n";
 			MessageBox.Show(errorMsg, "Glib error error {0}", MessageBoxButtons.AbortRetryIgnore,
 				MessageBoxIcon.Stop);
-			Console.WriteLine(errorMsg);
+			System.Diagnostics.Debug.WriteLine(errorMsg);
 			args.ExitApplication = false;
 		}
 
         public static void Main (string[] args)
         {
-            //Console.WriteLine(OpenTK.Graphics.GraphicsMode.Default);
+			//System.Diagnostics.Debug.WriteLine(OpenTK.Graphics.GraphicsMode.Default);
 			UnhandledExceptionHandler h = new UnhandledExceptionHandler (OnException);
 			ExceptionManager.UnhandledException += h;
             OpenTK.Toolkit.Init();

@@ -5,7 +5,6 @@ using OpenTK.Graphics.OpenGL;
 
 namespace glomp {
         
-
     public abstract class SceneNode {
         
         ////////////////
@@ -61,20 +60,20 @@ namespace glomp {
             rotY = yRot;
         }
         
-        public void MoveIntoPosition(bool rotate) {
-            //GL.Translate(originOffset);
-            GL.Translate(position);
-            if(rotate) {
-                GL.Rotate(rotY, Vector3.UnitY);
-            }
-                   
+		public void MoveIntoPosition(bool rotate, ref Matrix4 modelMatrixToBeAffected) {
+			Matrix4 translationMatrix = Matrix4.CreateTranslation (position);
+			modelMatrixToBeAffected = translationMatrix * modelMatrixToBeAffected;
+			if (rotate) {
+				Matrix4 rotationYMatrix = Matrix4.CreateRotationY (Util.DegreesToRadians(rotY));
+				modelMatrixToBeAffected = rotationYMatrix * modelMatrixToBeAffected;
+			}
         }
         
-        public void ApplyRotation() {
-            GL.Rotate(rotY, Vector3.UnitY);
+		public void ApplyRotation(ref Matrix4 modelMatrixToBeAffected) {
+			Matrix4 rotationYMatrix = Matrix4.CreateRotationY (Util.DegreesToRadians(rotY));
+			modelMatrixToBeAffected = rotationYMatrix * modelMatrixToBeAffected;
         }
         
-        public abstract void Render();
-        
+        public abstract void Render();       
     }
 }

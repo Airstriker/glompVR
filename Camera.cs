@@ -30,9 +30,27 @@ namespace glomp {
 		//the lower value of FOV, the higher zoom and lower texture quality. 
 		float fieldOfView = (float)Math.PI / 8; //In radians
 
+		//Shaders related stuff
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////
+		private Matrix4 cameraModelMatrix = Matrix4.Identity;
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+		public Matrix4 CameraModelMatrix {
+			get { return cameraModelMatrix; }
+		}
+
         public Vector3 Position {
             get { return position; }
         }
+
+		public float Yaw {
+			get { return yaw; }
+		}
+
+		public float Pitch {
+			get { return pitch; }
+		}
         
         public Vector3 LastMove {
             get { return lastMove; }
@@ -94,13 +112,17 @@ namespace glomp {
             Vector3 translate = -position;
             float rotY = 360.0f - yaw;
             float rotX = 360.0f - pitch;
-            
-            GL.Rotate(rotX, Vector3.UnitX);
-            GL.Rotate(rotY, Vector3.UnitY);
-            GL.Translate(translate);
+
+			Matrix4 rotationXMatrix = Matrix4.CreateRotationX (Util.DegreesToRadians(rotX));
+			Matrix4 rotationYMatrix = Matrix4.CreateRotationY (Util.DegreesToRadians(rotY));
+			Matrix4 translationMatrix = Matrix4.CreateTranslation (translate);
+
+			//OpenTK uses row vectors (unconventional but OpenGL way??), that's why the multiplication order is as follows
+			//OpenTK matrices are transposed
+			cameraModelMatrix = translationMatrix * rotationYMatrix * rotationXMatrix;
         }
 
-		public void updateCameraParams(Mouse inputDevice, float frameDelta) { //frameDelta needed for fps dependent behavior
+		public void updateCameraParams(Mouse inputDevice, float frameDelta, MainWindow mainWindow) { //frameDelta needed for fps dependent behavior
 
 			if (inputDevice != null /* && inputDevice.GetType() == Mouse*/) {
 
@@ -146,6 +168,7 @@ namespace glomp {
 					if (angleInDegrees < 5)
 						angleInDegrees = 5;
 					this.fieldOfView = Util.DegreesToRadians(angleInDegrees);
+					mainWindow.InitOrUpdateProjectionMatrix ();
 				}
 			}
 		}

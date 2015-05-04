@@ -80,7 +80,6 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="SceneNode.cs" />
     <Compile Include="Camera.cs" />
-    <Compile Include="FileNode.cs" />
     <Compile Include="NodeManager.cs" />
     <Compile Include="FileSlice.cs" />
     <Compile Include="SliceManager.cs" />
@@ -90,8 +89,22 @@
     <Compile Include="TextureManager.cs" />
     <Compile Include="Mouse.cs" />
     <Compile Include="Util.cs" />
-    <Compile Include="Shape.cs" />
     <Compile Include="VBOUtil.cs" />
+    <Compile Include="Shapes\Shape.cs" />
+    <Compile Include="Shapes\LabelShape.cs" />
+    <Compile Include="Shapes\FileNodeShape.cs" />
+    <Compile Include="Shapes\DirNodeShape.cs" />
+    <Compile Include="Shapes\DriveNodeShape.cs" />
+    <Compile Include="Shaders\Shader.cs" />
+    <Compile Include="Shaders\ShadersUtil.cs" />
+    <Compile Include="Nodes\Node.cs" />
+    <Compile Include="Nodes\DriveNode.cs" />
+    <Compile Include="Nodes\DirectoryNode.cs" />
+    <Compile Include="Nodes\FileNode.cs" />
+    <Compile Include="Shaders\NodeShader.cs" />
+    <Compile Include="Shaders\ShadersCommonProperties.cs" />
+    <Compile Include="Shaders\LabelShader.cs" />
+    <Compile Include="Shaders\SkyBoxShader.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop">
@@ -103,5 +116,17 @@
     <None Include="glomp.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Shaders\GLSL Shaders\labelFragmentShader.glsl" />
+    <None Include="Shaders\GLSL Shaders\labelVertexShader.glsl" />
+    <None Include="Shaders\GLSL Shaders\skyBoxFragmentShader.glsl" />
+    <None Include="Shaders\GLSL Shaders\skyBoxVertexShader.glsl" />
+    <None Include="Shaders\GLSL Shaders\nodeFragmentShader.glsl" />
+    <None Include="Shaders\GLSL Shaders\nodeVertexShader.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Shapes\" />
+    <Folder Include="Shaders\" />
+    <Folder Include="Shaders\GLSL Shaders\" />
+    <Folder Include="Nodes\" />
   </ItemGroup>
 </Project>

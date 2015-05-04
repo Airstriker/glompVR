@@ -30,57 +30,6 @@ public partial class MainWindow : Gtk.Window {
     private float[] lightAmbient = { 0.1f, 0.1f, 0.1f, 1.0f };
     private float[] lightDiffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
     private float[] lightPosition = {50.0f, 100.0f, -20.0f, 1.0f };
-    
-	/*  Skybox Textures - used with DispalyList  */
-	String[] skyBoxTextures = {
-		"..\\..\\resources\\skybox_front.bmp",
-		"..\\..\\resources\\skybox_right.bmp",
-		"..\\..\\resources\\skybox_left.bmp",
-		"..\\..\\resources\\skybox_back.bmp",
-		"..\\..\\resources\\skybox_up.bmp",
-		"..\\..\\resources\\skybox_down.bmp"
-	};
-
-	/* SkyBox Texture - used with VBO (more textures would be related to much higher overhead when using VBO) */
-	String skyBoxTexture = "..\\..\\resources\\skybox_front.bmp";
-
-	/*  File Nodes Textures  */
-	String[] fileNodeTextures = {
-		"..\\..\\resources\\towers2-1.png",
-		"..\\..\\resources\\towers2-2.png",
-		"..\\..\\resources\\towers2-3.png",
-		"..\\..\\resources\\towers2-4.png",
-		"..\\..\\resources\\towers2-5.png",
-		"..\\..\\resources\\towers2-6.png",
-		"..\\..\\resources\\towers2-7.png",
-		"..\\..\\resources\\towers2-8.png"
-	};
-
-	/*  Directory Nodes Textures  */
-	String[] dirNodeTextures = {
-		"..\\..\\resources\\towers2-1.png",
-		"..\\..\\resources\\towers2-2.png",
-		"..\\..\\resources\\towers2-3.png",
-		"..\\..\\resources\\towers2-4.png",
-		"..\\..\\resources\\towers2-5.png",
-		"..\\..\\resources\\towers2-6.png",
-		"..\\..\\resources\\towers2-7.png",
-		"..\\..\\resources\\towers2-8.png"
-	};
-
-	/*  Drive Nodes Textures  */
-	String[] driveNodeTextures = {
-		"..\\..\\resources\\towers2-1.png",
-		"..\\..\\resources\\towers2-2.png",
-		"..\\..\\resources\\towers2-3.png",
-		"..\\..\\resources\\towers2-4.png",
-		"..\\..\\resources\\towers2-5.png",
-		"..\\..\\resources\\towers2-6.png",
-		"..\\..\\resources\\towers2-7.png",
-		"..\\..\\resources\\towers2-8.png"
-	};
-
-
 
 	//SkyBox object
 	private SkyBox skyBox;
@@ -148,7 +97,8 @@ public partial class MainWindow : Gtk.Window {
     
     private LinkedList<SliceManager> sceneList = new LinkedList<SliceManager>();
 	private SliceManager slices;
-    private LinkedList<FileNode> selectedNodes = new LinkedList<FileNode>();
+    private LinkedList<Node> selectedNodes = new LinkedList<Node>();
+
 
 	public bool InTransition {
 		get { return inTransition; }
@@ -206,11 +156,9 @@ public partial class MainWindow : Gtk.Window {
 		Trace.AutoFlush = true;
 
         // open GL setup
-        InitProjectionMatrix();
+        InitOrUpdateProjectionMatrix();
         
         GL.Enable(EnableCap.DepthTest);
-        GL.Enable(EnableCap.Lighting);
-		GL.Enable(EnableCap.Texture2D);
         GL.Enable(EnableCap.CullFace);
         GL.CullFace(CullFaceMode.Back);
         
@@ -226,27 +174,11 @@ public partial class MainWindow : Gtk.Window {
         
         // set background colour
 		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
-               
-        GL.Fog(FogParameter.FogMode, (int)FogMode.Linear);
-		GL.Fog(FogParameter.FogColor, backgroundColour);          // Set Fog Color
-        GL.Fog(FogParameter.FogDensity, 0.1f);               // How Dense Will The Fog Be
-        GL.Hint(HintTarget.FogHint, HintMode.Nicest);         // Fog Hint Value
-		GL.Fog(FogParameter.FogStart, 130.0f); //130             // Fog Start Depth
-		GL.Fog(FogParameter.FogEnd, 160.0f); //160             // Fog End Depth
-        GL.Enable(EnableCap.Fog);
-        
-        // now lights
-        GL.Light(LightName.Light0, LightParameter.Ambient, lightAmbient);
-        GL.Light(LightName.Light0, LightParameter.Diffuse, lightDiffuse);
-        GL.Light(LightName.Light0, LightParameter.Position, lightPosition);
-        GL.Light(LightName.Light0, LightParameter.ConstantAttenuation, 0.8f);
-        GL.Enable(EnableCap.Light0);   
-        
+
         // setup the scene
 
 		// init SkyBox
-		skyBox = new SkyBox (50.0f, skyBoxTexture); //used with VBO
-		//skyBox = new SkyBox (50.0f, skyBoxTextures); //used with DispalyList
+		skyBox = new SkyBox (50.0f); //used with VBO
         InitScene();
 
 		// init mouse
@@ -265,10 +197,7 @@ public partial class MainWindow : Gtk.Window {
     private void InitScene() {
         
         slices = new SliceManager(this);
-		NodeManager.LoadNodesTextures (NodeManager.FILE_NODE, fileNodeTextures);
-		NodeManager.LoadNodesTextures (NodeManager.DIR_NODE, dirNodeTextures);
-		NodeManager.LoadNodesTextures (NodeManager.DRIVE_NODE, driveNodeTextures);
-		//NodeManager.GenerateDisplayLists (); //obsolete
+		DirectoryNode.LoadNodeTextures (); //Drive Nodes derive the textures from Directories, so no need to initialize them
 		NodeManager.LoadVBOs ();
         slices.Reset(START_PATH);
         
@@ -315,25 +244,11 @@ public partial class MainWindow : Gtk.Window {
 
     /* My scene rendering logic */
     private void RenderScene() {
-	
-		// Updating camera parameters basing on the used inputDevice. Also passing frameDelta here for fps dependent behavior
-		cam.updateCameraParams (mouse, frameDelta);
 
-		// Changing projection matrix
-		GL.MatrixMode(MatrixMode.Projection);
-		Matrix4 projection;
-		if(glwidget1 == null) {
-			GL.Viewport(0, 0, START_WIDTH, START_HEIGHT);
-			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, START_WIDTH / (float)START_HEIGHT, 0.01f, 500f);
-		} else {
-			GL.Viewport(0, 0, glwidget1.Allocation.Width, glwidget1.Allocation.Height);
-			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 0.01f, 500f);
-		}
-		GL.LoadMatrix(ref projection);
+		UpdateScene();
 
-		// Clearing all 
-		GL.Fog(FogParameter.FogColor, backgroundColour);
-		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
+		// Clearing all
+		//GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
 
 		//If you're drawing a scene that covers the whole screen each frame (for example when using skyBox), only clear depth buffer but not the color buffer.
 		//The buffers should always be cleared. On much older hardware, there was a technique to get away without clearing the scene, but on even semi-recent hardware, this will actually make things slower. So always do the clear.
@@ -341,29 +256,23 @@ public partial class MainWindow : Gtk.Window {
 		//GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 		//GL.Clear(ClearBufferMask.DepthBufferBit);
 
+		// Updating camera parameters basing on the used inputDevice. Also passing frameDelta here for fps dependent behavior
+		cam.updateCameraParams (mouse, frameDelta, this);
+
 		// Looking in the right direction
-		Matrix4 modelview = Matrix4.LookAt(cam.Eye, cam.Target, cam.Up);
-		GL.MatrixMode(MatrixMode.Modelview);
-		GL.LoadMatrix(ref modelview);
+		ShadersCommonProperties.viewMatrix = Matrix4.LookAt (cam.Eye, cam.Target, cam.Up);
 
 		// Drawing SkyBox
-		skyBox.drawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
+		skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
 
-		GL.PushAttrib(AttribMask.EnableBit|AttribMask.PolygonBit|AttribMask.CurrentBit);
-
-		UpdateScene();
-
-        // apply camera transform
-		cam.Transform();
+		// apply camera transform
+		cam.Transform(); //model matrix is modified
         
         // render the nodes, just render a slice for now, it renders in order 
-
 		foreach(SliceManager node in sceneList) {
 			node.Render();
 			this.culledThisFrame = node.culledTotal;
 		}
-		
-		GL.PopAttrib ();
     }
     
     private void UpdateScene() {
@@ -399,7 +308,7 @@ public partial class MainWindow : Gtk.Window {
     
     protected virtual void OnKeyPress (object o, Gtk.KeyPressEventArgs args) {
         
-        //System.Console.WriteLine("Key Pressed - " + args.Event.KeyValue);
+		//System.Diagnostics.Debug.WriteLine("Key Pressed - " + args.Event.KeyValue);
         if(inVerticalTransition) {
             return;
         }
@@ -529,7 +438,7 @@ public partial class MainWindow : Gtk.Window {
 		} else {
 			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 0; //vsync disabled
 		}
-        System.Console.WriteLine("Changed vsync to " + vsync);
+		System.Diagnostics.Debug.WriteLine("Changed vsync to " + vsync);
     }
     
     
@@ -655,7 +564,7 @@ public partial class MainWindow : Gtk.Window {
             if(viewingDir) {
                 viewingDir = false;
                 slices.ActiveSlice.FadeDirectories(true);
-                Console.WriteLine("Fading");
+				System.Diagnostics.Debug.WriteLine("Fading");
             }
         }
         */
@@ -667,28 +576,21 @@ public partial class MainWindow : Gtk.Window {
     }
   
     private void ResizeProjectionMatrix(Gdk.Rectangle rect) {
-        Matrix4 projection;
-        
         GL.Viewport(0, 0, rect.Width, rect.Height);    
-		projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, rect.Width / (float)rect.Height, 0.01f, 500f);
-        
-        GL.MatrixMode(MatrixMode.Projection);
-        GL.LoadMatrix(ref projection);
+		ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, rect.Width / (float)rect.Height, 0.01f, 500f);
     }
 
-    private void InitProjectionMatrix() {
-        Matrix4 projection;
+    public void InitOrUpdateProjectionMatrix() {
         if(glwidget1 == null) {
             GL.Viewport(0, 0, START_WIDTH, START_HEIGHT);
-			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, START_WIDTH / (float)START_HEIGHT, 0.01f, 500f);
-        } else {
+			ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, START_WIDTH / (float)START_HEIGHT, 0.01f, 500f);
+        } else { //Default
             GL.Viewport(0, 0, glwidget1.Allocation.Width, glwidget1.Allocation.Height);    
-			projection = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 0.01f, 500f);
+			ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 0.01f, 500f);
         }
-        GL.MatrixMode(MatrixMode.Projection);
-        GL.LoadMatrix(ref projection);
     }
     
+	//TODO Delete usages of SetColourForCamHeight()
     private void SetColourForCamHeight() {
         if(heightCueEnabled) {
             float camDiff = cam.Position.Y - camStartPosition.Y;
@@ -806,7 +708,7 @@ public partial class MainWindow : Gtk.Window {
         
     private async void NodeActivated() {
 		Trace.WriteLine ("NodeActivated");
-        FileNode activeNode = slices.ActiveSlice.GetActiveNode();
+        Node activeNode = slices.ActiveSlice.GetActiveNode();
         if(activeNode.IsDirectory) {
 			if (activeNode.ChildSlice == null) {
 				activeNode.NodeActivated = true;
@@ -831,7 +733,7 @@ public partial class MainWindow : Gtk.Window {
             entry4.Text = slices.ActiveSlice.Path;
         } else {
             // launch the file!            
-            System.Console.WriteLine("Launching " + activeNode.File);
+			System.Diagnostics.Debug.WriteLine("Launching " + activeNode.File);
             // TODO: Launch using GIO
             System.Diagnostics.Process.Start(activeNode.File);
             statusbar6.Pop(0);
@@ -863,7 +765,7 @@ public partial class MainWindow : Gtk.Window {
         
     protected virtual void OnHeightColourToggle (object sender, System.EventArgs e)
     {
-        Console.WriteLine("Height Colour Toggled");
+		System.Diagnostics.Debug.WriteLine("Height Colour Toggled");
         heightCueEnabled = !heightCueEnabled;
         SetColourForCamHeight();
     }
@@ -875,7 +777,7 @@ public partial class MainWindow : Gtk.Window {
     
     protected virtual void OnWidgetClick (object o, Gtk.ButtonReleaseEventArgs args)
     {  
-        Console.WriteLine("Widget clicked");
+		System.Diagnostics.Debug.WriteLine("Widget clicked");
         glwidget1.GrabFocus();
         glwidget1.HasFocus = true;
     }
@@ -908,17 +810,17 @@ public partial class MainWindow : Gtk.Window {
 
     private void UpdateDetailsBox() {
         if(detailsBox.Visible) {
-            FileNode active = slices.ActiveSlice.GetActiveNode();
+            Node active = slices.ActiveSlice.GetActiveNode();
 			System.IO.FileInfo fileInfo = new System.IO.FileInfo(active.File);
 
-            if(!active.IsDirectory) {
+			if(active is FileNode) {
                 detailLabelContents.Visible = false;
                 detailValueContents.Visible = false;
                 
 				long fileSize = fileInfo.Length;
 				detailValueSize.Text = String.Format(new FileSizeFormatProvider(), "{0:fs}", fileSize);
                 
-				detailValueType.Text = active.Description + " (" + active.FileExtension + " file)";
+				detailValueType.Text = ((FileNode)active).Description + " (" + ((FileNode)active).FileExtension + " file)";
 
 				detailValueSpace.Text = "dupa"; //String.Format(new FileSizeFormatProvider(), "{0:fs}", Convert.ToUInt64(info.GetAttributeString("filesystem:free")));
 			} else { //This is for directories
@@ -930,7 +832,7 @@ public partial class MainWindow : Gtk.Window {
                 
                 detailValueType.Text = "Directory";  
                 
-                detailValueContents.Text = active.NumChildren + " items (" + active.NumDirs + " folders)";
+				detailValueContents.Text = ((DirectoryNode)active).NumChildren + " items (" + ((DirectoryNode)active).NumDirs + " folders)";
             }
 
 			detailEntryName.Text = active.FileName;
@@ -1066,7 +968,7 @@ public partial class MainWindow : Gtk.Window {
     
     private void RenameFile(String newFileName) {
         // rename the file
-        FileNode active = slices.ActiveSlice.GetActiveNode();
+        Node active = slices.ActiveSlice.GetActiveNode();
         
         try {
             System.IO.File.Move(active.File, active.File.Replace(active.FileName, newFileName));
