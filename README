@@ -7,3 +7,6 @@ Needed:
 Visual C++ Redistributable Packages for Visual Studio 2013 version x86 (needed for OpenTK.Rift package to work)
 
 Author: Julian Sychowski
+
+PS. In case of Compiling/Running problems because of GTK GLWidget, please edit MainWindow.cs, make some changes (no matter what), compile once (can be with errors), revert changes and compile again. This will eliminate the mentioned problems.
+Sorry for inconveniences. Anybody knowing the reason of this issues please contact me or simply edit this README file.

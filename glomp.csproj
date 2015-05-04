@@ -122,6 +122,7 @@
     <None Include="Shaders\GLSL Shaders\skyBoxVertexShader.glsl" />
     <None Include="Shaders\GLSL Shaders\nodeFragmentShader.glsl" />
     <None Include="Shaders\GLSL Shaders\nodeVertexShader.glsl" />
+    <None Include="README" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Shapes\" />
