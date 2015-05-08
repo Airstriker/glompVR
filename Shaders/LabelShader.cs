@@ -16,12 +16,12 @@ namespace glomp
 		/// <summary>
 		/// Address of the texture uniform
 		/// </summary>
-		public int Texture_location { get; set; }
+		private int texture_location;
 
 		/// <summary>
 		/// Address of the label color uniform
 		/// </summary>
-		public int color_location;
+		private int color_location;
 
 
 		private void InitShaderProgram()
@@ -46,7 +46,7 @@ namespace glomp
 			// obtain location of Model uniform
 			Model_location = GL.GetUniformLocation(ShaderProgramID, "Model");
 			// get texture uniform location
-			Texture_location = GL.GetUniformLocation(ShaderProgramID, "tex");
+			texture_location = GL.GetUniformLocation(ShaderProgramID, "tex");
 			// get label color uniform location
 			color_location = GL.GetUniformLocation(ShaderProgramID, "color");
 		}
@@ -59,6 +59,7 @@ namespace glomp
 			GL.UniformMatrix4(View_location, false, ref ShadersCommonProperties.viewMatrix);
 			GL.UniformMatrix4(Model_location, false, ref modelMatrix);
 			GL.Uniform4(color_location, LabelColor);
+			GL.Uniform1(texture_location, 0); // set texture uniform (use texture bind to texture unit 0 (search for usages of GL.ActiveTexture(TextureUnit.Texture0))
 		}
 
 

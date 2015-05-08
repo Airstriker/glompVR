@@ -237,8 +237,6 @@ namespace glomp {
 			// bind texture to texture unit 0
 			GL.ActiveTexture(TextureUnit.Texture0);
 			GL.BindTexture(TextureTarget.Texture2D, textureIndex);
-			// set texture uniform
-			GL.Uniform1(LabelShader.Instance.Texture_location, 0);
         }
         
 

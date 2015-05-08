@@ -264,8 +264,7 @@ namespace glomp
 				// bind texture to texture unit 0
 				GL.ActiveTexture(TextureUnit.Texture0);
 				GL.BindTexture (TextureTarget.Texture2D, thumbTextureIndex);
-				// set texture uniform
-				GL.Uniform1(NodeShader.Instance.Texture_location, 0);
+
 			} else { //ordinary files
 				GL.Enable (EnableCap.Blend);     // Turn Blending On
 				GL.Disable (EnableCap.CullFace); // Due to this the cubes are transparent - all walls visible
@@ -273,8 +272,6 @@ namespace glomp
 				// bind texture to texture unit 0
 				GL.ActiveTexture(TextureUnit.Texture0);
 				GL.BindTexture (TextureTarget.Texture2D, fileTextureIndex);
-				// set texture uniform
-				GL.Uniform1(NodeShader.Instance.Texture_location, 0);
 			}
 
 			if (isDimmed) {

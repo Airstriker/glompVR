@@ -24,7 +24,7 @@ namespace glomp
 		/// <summary>
 		/// Address of the texture uniform
 		/// </summary>
-		public int Texture_location { get; set; }
+		private int texture_location;
 
 		/// <summary>
 		/// Address of the texture environment mode uniform
@@ -58,7 +58,7 @@ namespace glomp
 			// obtain location of inverse of View uniform
 			v_inv_location = GL.GetUniformLocation(ShaderProgramID, "v_inv");
 			// get texture uniform location
-			Texture_location = GL.GetUniformLocation(ShaderProgramID, "tex");
+			texture_location = GL.GetUniformLocation(ShaderProgramID, "tex");
 			// get texture environment mode uniform location
 			textureEnvModeCombine_location = GL.GetUniformLocation(ShaderProgramID, "textureEnvModeCombine");
 		}
@@ -76,6 +76,7 @@ namespace glomp
 			GL.UniformMatrix3(m_3x3_inv_transp_location, false, ref m_3x3_inv_transp);
 			GL.UniformMatrix4(v_inv_location, false, ref v_inv);
 			GL.Uniform1(textureEnvModeCombine_location, (int)TextureEnvModeCombine);
+			GL.Uniform1(texture_location, 0); // set texture uniform (use texture bind to texture unit 0 (search for usages of GL.ActiveTexture(TextureUnit.Texture0))
 		}
 
 

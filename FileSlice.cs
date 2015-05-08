@@ -494,8 +494,6 @@ namespace glomp {
 				// bind texture to texture unit 0
 				GL.ActiveTexture(TextureUnit.Texture0);
 				GL.BindTexture(TextureTarget.Texture2D, texture);
-				// set texture uniform
-				GL.Uniform1(MainWindow.texture_location, 0);
 				GL.Begin(PrimitiveType.Quads);
 				float numberOfTextureRepeats = 30.0f;
 				float mSize = 500.0f;

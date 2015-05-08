@@ -188,8 +188,6 @@ namespace glomp
 			// bind texture to texture unit 0
 			GL.ActiveTexture(TextureUnit.Texture0);
 			GL.BindTexture (TextureTarget.Texture2D, DirectoryNode.nodeTextures[currentFrame]); //APPLY TEXTURE TO DIRECTORIES!
-			// set texture uniform
-			GL.Uniform1(NodeShader.Instance.Texture_location, 0);
 
 			if (isDirFaded || isDimmed) {
 				GL.BlendFunc (BlendingFactorSrc.DstColor, BlendingFactorDest.DstAlpha); //Very transparent

@@ -128,8 +128,6 @@ namespace glomp
 			// bind texture to texture unit 0
 			GL.ActiveTexture (TextureUnit.Texture0);
 			GL.BindTexture (TextureTarget.Texture2D, skyBoxSingleTexture); //Only one texture used
-			// set texture uniform
-			GL.Uniform1 (SkyBoxShader.Instance.Texture_location, 0);
 
 			//Rotates, making sure it rotates around the center of the cube; the spot lights also move around in the cube
 
