@@ -19,6 +19,9 @@ using System.Linq;
 using System.Diagnostics.Tracing;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using System.Threading;
+using System.Runtime.InteropServices;
+using OpenTK.Platform;
 
 
 public partial class MainWindow : Gtk.Window {
@@ -109,13 +112,29 @@ public partial class MainWindow : Gtk.Window {
 		get { return frameDelta; }
 		set { frameDelta = value; }
 	}
+
+	//Max number of threads running in parallel (during I/O operations)
+	public int MaxDegreeOfParallelism { get; set; }
     
     /* Constructor */
     public MainWindow() : base(Gtk.WindowType.Toplevel) {
 		Build();
 
 		//System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
-		//this.Fullscreen ();
+		this.Fullscreen ();
+
+		//Determining number of CPU cores
+		int coreCount = 0;
+		foreach (var item in new System.Management.ManagementObjectSearcher("Select NumberOfCores from Win32_Processor").Get()) //needs reference to System.Management
+		{
+			coreCount += int.Parse(item["NumberOfCores"].ToString());
+		}
+		System.Diagnostics.Debug.WriteLine("The number of cores on this computer is {0}.", coreCount);
+
+		//Setting maximum number of threads running in parallel (during I/O operations)
+		MaxDegreeOfParallelism = (int)Math.Floor((double)coreCount/2); //needs to be determined for smooth animations (I/O operations highly affect OpenGL rendering performance, so the number of threads doing I/O in parallel have to be limited)
+		System.Diagnostics.Debug.WriteLine("The number of cores used for parallel I/O operations is equal to NumberOfCores divided by 2, that is {0}.", MaxDegreeOfParallelism);
+
         
 		entry4.Activated += new System.EventHandler(this.OnTextEntered);
         findEntry.Activated += new System.EventHandler(this.OnSearchActivated);
@@ -154,6 +173,8 @@ public partial class MainWindow : Gtk.Window {
         
 		Trace.Listeners.Add(new TextWriterTraceListener("C:\\dupa.txt"));
 		Trace.AutoFlush = true;
+
+		GraphicsContext.ShareContexts = true;
 
         // open GL setup
         InitOrUpdateProjectionMatrix();
@@ -705,7 +726,13 @@ public partial class MainWindow : Gtk.Window {
         statusbar6.Pop(0);
         statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
     }
-        
+    
+
+	// PInvoke Import
+	[DllImport("libgdk-win32-2.0-0.dll", CallingConvention=CallingConvention.Cdecl)]
+	public static extern IntPtr gdk_win32_drawable_get_handle( IntPtr window_handle );
+
+
     private async void NodeActivated() {
 		Trace.WriteLine ("NodeActivated");
         Node activeNode = slices.ActiveSlice.GetActiveNode();
@@ -725,6 +752,74 @@ public partial class MainWindow : Gtk.Window {
 			scaleIn = true;
             sliceToFade = slices.ActiveSlice;
 			await MainThreadDispatcher.InvokeAsync(() => slices.AddSliceAbove(activeNode.ChildSlice)); //dispatches work to the UI thread (this is needed due to OpenGL calls in this method (Texture Generation)!). MainThreadDispatcher is set at MainWindow() constructor. Look here for the explanation: http://www.opentk.com/node/3841
+
+
+			//http://www.opentk.com/doc/graphics/graphicscontext
+
+			// The new context must be created on a new thread
+			// (see remarks section, below)
+			// We need to create a new window for the new context.
+			// Note 1: new windows remain invisible unless you call
+			//         INativeWindow.Visible = true or IGameWindow.Run()
+			// Note 2: invisible windows fail the pixel ownership test.
+			//         This means that the contents of the front buffer are undefined, i.e.
+			//         you cannot use an invisible window for offscreen rendering.
+			//         You will need to use a framebuffer object, instead.
+			// Note 3: context sharing will fail if the main context is in use.
+			// Note 4: this code can be used as-is in a GLControl or GameWindow.
+
+			/*
+			IWindowInfo m_window_info;
+			IGraphicsContext m_graphics_context;
+
+			IGraphicsContext currentContext = GraphicsContext.CurrentContext;
+
+			// Init
+			IntPtr window_handle = gdk_win32_drawable_get_handle( GdkWindow.Handle );
+			m_window_info = Utilities.CreateWindowsWindowInfo( window_handle );
+
+			m_graphics_context = new GraphicsContext( GraphicsMode.Default, m_window_info );
+			m_graphics_context.MakeCurrent( m_window_info );
+			((IGraphicsContextInternal)m_graphics_context).LoadAll();
+
+			MakeCurrent ();
+
+
+
+
+			EventWaitHandle context_ready = new EventWaitHandle(false, EventResetMode.AutoReset);
+
+			IntPtr windowHandle = gdk_win32_drawable_get_handle(GdkWindow.Handle);
+			IWindowInfo windowInfo = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(windowHandle);
+
+			GraphicsContext.CurrentContext.MakeCurrent(null);
+
+			System.Threading.Thread thread = new System.Threading.Thread(() =>
+				{
+					INativeWindow window = new NativeWindow();
+					IGraphicsContext context = new GraphicsContext(GraphicsMode.Default, window.WindowInfo);
+					context.MakeCurrent(window.WindowInfo);
+
+					while (window.Exists)
+					{
+						window.ProcessEvents();
+
+						// Perform your processing here
+						slices.AddSliceAbove(activeNode.ChildSlice);
+
+						System.Threading.Thread.Sleep(1); // Limit CPU usage, if necessary
+					}
+				});
+			thread.IsBackground = true;
+			thread.Start();
+
+			context_ready.WaitOne();
+			//GraphicsContext.CurrentContext.MakeCurrent(windowInfo);
+			m_graphics_context.MakeCurrent( m_window_info );
+			((IGraphicsContextInternal)m_graphics_context).LoadAll();
+			*/
+
+
 			slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
             ChangedActive();
             ActivateTransition();

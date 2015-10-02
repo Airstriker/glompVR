@@ -144,15 +144,15 @@ namespace glomp {
 					node.NumFiles = directory.EnumerateFiles ().Count ();
 					node.NumChildren = node.NumDirs + node.NumFiles;
 					node.DirHeight = node.GetHeightForFolder (node.NumChildren);
+
+					// Creation, last access, and last write time 
+					node.CreationTime = directory.CreationTime;
+					node.LastAccessTime = directory.LastAccessTime;
+					node.ModifyTime = directory.LastWriteTime;
 				} catch {
 					node.NumChildren = 0;
 					node.DirHeight = 1f;
 				}
-
-				// Creation, last access, and last write time 
-				node.CreationTime = directory.CreationTime;
-				node.LastAccessTime = directory.LastAccessTime;
-				node.ModifyTime = directory.LastWriteTime;
 
 				node.File = drive.Name;
 				node.SetParent (this);
@@ -174,7 +174,7 @@ namespace glomp {
 
 
 		public void FillFileSliceWithDirectoriesAndFiles () {
-		
+			
 			while (parentWindow.InTransition) {
 				//SIMPLY WAIT TILL THE END OF TRANSITION ANIMATION
 				//to eliminate annoying lags (due to disk operations during transition animation)
@@ -284,7 +284,9 @@ namespace glomp {
 					}
 				}
 				else {
-					Parallel.ForEach(directoriesAndFiles, () => 0, GetFileNode, (c) => {
+					var options = new ParallelOptions { MaxDegreeOfParallelism = parentWindow.MaxDegreeOfParallelism }; //setting max number of threads running in parallel (needs to be limited for smooth animations).
+
+					Parallel.ForEach(directoriesAndFiles, options, () => 0, GetFileNode, (c) => {
 						Interlocked.Add(ref fileCount, c);                          
 					});
 				}
