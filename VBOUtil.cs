@@ -186,7 +186,10 @@ namespace glomp
 
 			// Draw the elements in the element array buffer
 			// Draws up items in the Color, Vertex, TexCoordinate, and Normal Buffers using indices in the ElementArrayBuffer
-			GL.DrawElements(PrimitiveType.Triangles, vbo.NumElements, DrawElementsType.UnsignedInt, IntPtr.Zero);
+			//GL.DrawElements(PrimitiveType.Triangles, vbo.NumElements, DrawElementsType.UnsignedInt, IntPtr.Zero);
+
+			//GL.DrawRangeElements is slightly better performance-wise than GL.DrawElements
+			GL.DrawRangeElements(PrimitiveType.Triangles, 0, vbo.NumElements - 1, vbo.NumElements, DrawElementsType.UnsignedInt, IntPtr.Zero);
 
 			// Could also call GL.DrawArrays which would ignore the ElementArrayBuffer and just use primitives
 			// Of course we would have to reorder our data to be in the correct primitive order
