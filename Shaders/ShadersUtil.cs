@@ -24,7 +24,9 @@ namespace glomp
 			}
 			GL.CompileShader(address);
 			GL.AttachShader(program, address);
-			System.Diagnostics.Debug.WriteLine(GL.GetShaderInfoLog(address));
+            String shaderInfoLog;
+            GL.GetShaderInfoLog(address, out shaderInfoLog);
+            if (shaderInfoLog != "") System.Diagnostics.Debug.WriteLine(shaderInfoLog);
 		}
 	}
 }

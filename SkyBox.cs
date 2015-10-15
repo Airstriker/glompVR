@@ -81,7 +81,7 @@ namespace glomp
 		/* TEXTURES  */
 		/* SkyBox Texture - used with VBO (more textures would be related to much higher overhead when using VBO) */
 		String skyBoxTexturePath = "..\\..\\resources\\skybox_front.bmp";
-		private static int skyBoxSingleTexture;
+		private static uint skyBoxSingleTexture;
 
 		/* TEXTURE INDEXes  */
 		private static readonly int SKY_FRONT = 0;
@@ -101,7 +101,9 @@ namespace glomp
 		{
 			mSize = aSize;
 			if (skyBoxTexturePath !=null) {
-				skyBoxSingleTexture = TextureManager.LoadTexture(skyBoxTexturePath);
+                TextureTarget textureTarget;
+                ImageGDI.LoadFromDisk(skyBoxTexturePath, out skyBoxSingleTexture, out textureTarget);
+                System.Diagnostics.Debug.WriteLine("Loaded " + skyBoxTexturePath + " with handle " + skyBoxSingleTexture + " as " + textureTarget);
 			}
 
 			//Using VBO concept instead of DisplayList

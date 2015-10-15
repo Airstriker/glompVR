@@ -23,7 +23,7 @@ namespace glomp
 
 		//Static variables
 		//public static int[][] nodeTextures = new int[numberOfFileNodeTypes][]; //array of arrays
-		public static int[] nodeTextures;
+		public static uint[] nodeTextures;
 
 		protected float dirHeight = 1.0f;
 		protected int numChildren = 0;
@@ -72,10 +72,13 @@ namespace glomp
 
 		public static void LoadNodeTextures() { //note, that this is a static method and static array nodeTextures -> meaning, that all DirectoryNodes will have the same textures (unlike FileNodes)
 			//Creates a map of textures (a couple of textures per each file node type)
-			nodeTextures = new int[dirNodeTextures.Length];
+			nodeTextures = new uint[dirNodeTextures.Length];
 			int i = 0;
 			foreach (String texture in dirNodeTextures) {
-				nodeTextures[i++] = TextureManager.LoadTexture(texture);
+                TextureTarget textureTarget;
+                ImageGDI.LoadFromDisk(texture, out nodeTextures[i], out textureTarget);
+                System.Diagnostics.Debug.WriteLine("Loaded " + texture + " with handle " + nodeTextures[i] + " as " + textureTarget);
+                i++;
 			}
 		}
 

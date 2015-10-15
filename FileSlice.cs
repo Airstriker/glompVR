@@ -364,7 +364,6 @@ namespace glomp {
 
 					// If we get an InvalidOperationException and our mode is Mode.ThumbnailOnly,
 					// then we have a ShellItem that doesn't have a thumbnail (icon only).
-					((FileNode)node).ThumbBmp = null;
 				}
 
 				// Creation, last access, and last write time 

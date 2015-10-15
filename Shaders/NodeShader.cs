@@ -45,7 +45,9 @@ namespace glomp
              * Like C code, the code is first compiled, then linked, so that it goes
              * from human-readable code to the machine language needed. */
 			GL.LinkProgram(ShaderProgramID);
-			System.Diagnostics.Debug.WriteLine(GL.GetProgramInfoLog(ShaderProgramID));
+            String programInfoLog;
+            GL.GetProgramInfoLog(ShaderProgramID, out programInfoLog);
+            if (programInfoLog != "") System.Diagnostics.Debug.WriteLine(programInfoLog);
 
 			// obtain location of Projection uniform
 			Projection_location = GL.GetUniformLocation(ShaderProgramID, "Projection");

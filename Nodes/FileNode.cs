@@ -136,6 +136,7 @@ namespace glomp
 					PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
 
 				thumbBmp.UnlockBits(data);
+                thumbBmp = null; //this image is no longer needed as long as we have texture
 
 				// set texture parameters
 

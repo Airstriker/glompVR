@@ -5,9 +5,7 @@
 #endregion
 
 using System;
-using GLib;
 using System.Collections.Generic;
-using Gtk;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK;
@@ -24,8 +22,10 @@ using System.Runtime.InteropServices;
 using OpenTK.Platform;
 
 
-public partial class MainWindow : Gtk.Window {
-   
+public partial class MainWindow : GameWindow {
+
+	#region --- Private Fields ---
+
     private Stopwatch frameTimer = new Stopwatch();
     private int frameCounter = 0;
     private long currentTicks = 0;
@@ -49,9 +49,6 @@ public partial class MainWindow : Gtk.Window {
     private static readonly float[] LOW_COLOUR = {0.06f, 0.06f, 0.13f, 0f};
     private static readonly float[] BLACK = {0f, 0f, 0f, 0f};
     private static readonly float[] BACKGROUND =  { 0.1f, 0.1f, 0.2f, 0.0f };
-    
-    private static readonly int START_WIDTH = 300;
-    private static readonly int START_HEIGHT = 200;
     
     private readonly float rDiffDown = BACKGROUND[0] - LOW_COLOUR[0];
     private readonly float gDiffDown = BACKGROUND[1] - LOW_COLOUR[1];
@@ -84,16 +81,15 @@ public partial class MainWindow : Gtk.Window {
     private bool fadeOut;
     private bool scaleIn = false;
     private bool doScaleIn = false;
-    private FilenameCompleter completer = new FilenameCompleter();
-    private EntryCompletion completion;
-    private ListStore store;
-    private AboutDialog about;
-    private bool initted = false;
+    //private FilenameCompleter completer = new FilenameCompleter();
+    //private EntryCompletion completion;
+    //private ListStore store;
+    //private AboutDialog about;
     private bool vsync = true;
-    private Label label; 
+    //private Label label; 
     private bool textFocus;
     private float[] backgroundColour = (float[])BACKGROUND.Clone();
-    private bool heightCueEnabled = true;
+    private bool heightCueEnabled = false;
     private int culledThisFrame = 0;
 
 	static Dispatcher MainThreadDispatcher;
@@ -102,6 +98,10 @@ public partial class MainWindow : Gtk.Window {
 	private SliceManager slices;
     private LinkedList<Node> selectedNodes = new LinkedList<Node>();
 
+	#endregion
+
+
+	private void OnKeyDownInternal(object sender, OpenTK.Input.KeyboardKeyEventArgs e) { OnKeyDown(e); }
 
 	public bool InTransition {
 		get { return inTransition; }
@@ -117,11 +117,10 @@ public partial class MainWindow : Gtk.Window {
 	public int MaxDegreeOfParallelism { get; set; }
     
     /* Constructor */
-    public MainWindow() : base(Gtk.WindowType.Toplevel) {
-		Build();
+	public MainWindow() : base(800, 600, new GraphicsMode(32, 24, 8, 8), "GlompVR") { //MSAA (MultiSample AntiAliasing enabled - 8 samples
+		//Build();
 
 		//System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
-		this.Fullscreen ();
 
 		//Determining number of CPU cores
 		int coreCount = 0;
@@ -136,25 +135,18 @@ public partial class MainWindow : Gtk.Window {
 		System.Diagnostics.Debug.WriteLine("The number of cores used for parallel I/O operations is equal to NumberOfCores divided by 2, that is {0}.", MaxDegreeOfParallelism);
 
         
-		entry4.Activated += new System.EventHandler(this.OnTextEntered);
-        findEntry.Activated += new System.EventHandler(this.OnSearchActivated);
-        glwidget1.CanFocus = true;
+		//entry4.Activated += new System.EventHandler(this.OnTextEntered);
+        //findEntry.Activated += new System.EventHandler(this.OnSearchActivated);
         
-        entry4.ModifyBase(StateType.Normal, new Gdk.Color(25, 25, 50));
-        entry4.ModifyBg(StateType.Normal, new Gdk.Color(25, 25, 50));
-        entry4.ModifyFg(StateType.Normal, new Gdk.Color(25, 25, 50));
+		InitGL ();
+
+		// setup the scene
+
+		// init SkyBox
+		skyBox = new SkyBox (50.0f); //used with VBO
+		InitScene();
         
-        entry4.ModifyText(StateType.Normal, new Gdk.Color(240, 240, 240));
-        entry4.ModifyCursor(new Gdk.Color(0, 240, 0), new Gdk.Color(0, 0, 255));
-        
-		if(OpenTK.Graphics.GraphicsContext.ShareContexts) {
-            GLWidget.GraphicsContextInitialized += new System.EventHandler(this.OnGlwidgetInit);  
-            GLWidget.GraphicsContextShuttingDown += new System.EventHandler(this.OnWidgetShuttingDown);
-        } else {
-            glwidget1.Initialized += new System.EventHandler(this.OnGlwidgetInit);  
-            glwidget1.ShuttingDown += new System.EventHandler(this.OnWidgetShuttingDown);  
-        }
-        
+		/*
         completer.DirsOnly = true;
         completion = new EntryCompletion();
         entry4.Completion = completion;
@@ -162,14 +154,19 @@ public partial class MainWindow : Gtk.Window {
         store = new ListStore(GType.String);
         completion.Model = store;
         completion.MinimumKeyLength = 1;
-        glwidget1.GrabFocus();
+		*/
+
+		// init mouse
+		mouse = new Mouse ();
+
+		KeyDown += OnKeyDownInternal;
 
 		MainThreadDispatcher = Dispatcher.CurrentDispatcher;
     }
    
 
-    /* Main Widget Init */
-    protected virtual void OnGlwidgetInit(object sender, System.EventArgs e) {
+    /* Init OpenGL*/
+	private void InitGL() {
         
 		Trace.Listeners.Add(new TextWriterTraceListener("C:\\dupa.txt"));
 		Trace.AutoFlush = true;
@@ -191,27 +188,14 @@ public partial class MainWindow : Gtk.Window {
         GL.DepthFunc(DepthFunction.Always);
 		GL.ShadeModel(ShadingModel.Smooth); //smooth or flat
         
-        GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
+		GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
         
         // set background colour
 		GL.ClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
 
-        // setup the scene
-
-		// init SkyBox
-		skyBox = new SkyBox (50.0f); //used with VBO
-        InitScene();
-
-		// init mouse
-		mouse = new Mouse ();
-
-		if (vsync) {
-			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 1; //vsync enabled
-		} else {
-			OpenTK.Graphics.GraphicsContext.CurrentContext.SwapInterval = 0; //vsync disabled
-		}
-        initted = true;
-		Trace.WriteLine(OpenTK.Graphics.GraphicsContext.CurrentContext.GraphicsMode.ToString());
+		VSync = VSyncMode.Off;
+        
+		System.Diagnostics.Debug.WriteLine(OpenTK.Graphics.GraphicsContext.CurrentContext.GraphicsMode.ToString());
     }
     
 
@@ -227,17 +211,14 @@ public partial class MainWindow : Gtk.Window {
         // Set up the camera
         cam.Put(camStartPosition, camStartPitch, camStartYaw);     
         doScaleIn = true;
-        glwidget1.HasFocus = true;
-        statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-        
-        GLib.Idle.Add(new GLib.IdleHandler(IdleRedraw));
-        //GLib.Timeout.Add (10, new GLib.TimeoutHandler (IdleRedraw));
     }
 
     
-    /* Widget render callback */
-    protected virtual void OnGlwidgetRenderFrame(object sender, System.EventArgs e) {
+    /* MainWindow render callback */
+	protected override void OnRenderFrame(FrameEventArgs e) {
         
+		base.OnRenderFrame (e);
+
         if (!frameTimer.IsRunning) {
             frameTimer.Start();
         }
@@ -247,7 +228,7 @@ public partial class MainWindow : Gtk.Window {
 		RenderScene();
 
         if (frameTimer.ElapsedMilliseconds > 1000) {
-			this.Title = "GLomp " + frameCounter + "fps - " + slices.ActiveSlice.Path + " - " + culledThisFrame + " nodes culled";
+			this.Title = "GLompVR by Airstriker. " + frameCounter + "fps. ActiveSlice Path: " + slices.ActiveSlice.Path + " Number of nodes on ActiveSlice: " + slices.ActiveSlice.NumFiles + ". Culled: " + culledThisFrame + " nodes.";
             frameCounter = 0;
             currentTicks = 0;
             frameTimer.Reset();
@@ -257,9 +238,8 @@ public partial class MainWindow : Gtk.Window {
             currentTicks = frameTimer.ElapsedTicks;
         }
         
-        //glwidget1.QueueDraw();
         frameCounter++;   
-		//OpenTK.Graphics.GraphicsContext.CurrentContext.SwapBuffers();      
+		SwapBuffers();
     }
 
 
@@ -273,9 +253,9 @@ public partial class MainWindow : Gtk.Window {
 
 		//If you're drawing a scene that covers the whole screen each frame (for example when using skyBox), only clear depth buffer but not the color buffer.
 		//The buffers should always be cleared. On much older hardware, there was a technique to get away without clearing the scene, but on even semi-recent hardware, this will actually make things slower. So always do the clear.
-		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+		//GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 		//GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-		//GL.Clear(ClearBufferMask.DepthBufferBit);
+		GL.Clear(ClearBufferMask.DepthBufferBit);
 
 		// Updating camera parameters basing on the used inputDevice. Also passing frameDelta here for fps dependent behavior
 		cam.updateCameraParams (mouse, frameDelta, this);
@@ -283,7 +263,7 @@ public partial class MainWindow : Gtk.Window {
 		// Looking in the right direction
 		ShadersCommonProperties.viewMatrix = Matrix4.LookAt (cam.Eye, cam.Target, cam.Up);
 
-		// Drawing SkyBox
+		// Drawing SkyBox - it must be drawn first due to texture blending with nodes' textures.
 		skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
 
 		// apply camera transform
@@ -318,56 +298,55 @@ public partial class MainWindow : Gtk.Window {
         }  
     }
     
-
-    public bool IdleRedraw() {
-        glwidget1.QueueDraw();
-        return true;
-    }
     
-    
-    // user event handlers
-    
-    protected virtual void OnKeyPress (object o, Gtk.KeyPressEventArgs args) {
+	/// <summary>
+	/// Occurs whenever a keybord key is pressed.
+	/// </summary>
+	protected override void OnKeyDown(OpenTK.Input.KeyboardKeyEventArgs e) {
         
 		//System.Diagnostics.Debug.WriteLine("Key Pressed - " + args.Event.KeyValue);
         if(inVerticalTransition) {
             return;
         }
-        if (args.Event.Key == Gdk.Key.Tab) {
-            entry4.GrabFocus();
-            entry4.HasFocus = true;
-            args.RetVal = true;
+		if (e.Key == OpenTK.Input.Key.Tab) {
+            //entry4.GrabFocus();
+            //entry4.HasFocus = true;
+            //args.RetVal = true;
             return;
         }
-        switch(args.Event.Key) {
-        case Gdk.Key.Up: MoveForward(); args.RetVal = true; break;
-        case Gdk.Key.Down: MoveBackward(); args.RetVal = true; break;
-        case Gdk.Key.Left: MoveLeft(); args.RetVal = true; break;
-        case Gdk.Key.Right: MoveRight(); args.RetVal = true; break;
-		case Gdk.Key.Return: NodeActivated(); break;
-        case Gdk.Key.BackSpace: ToParent(true); break;
-        case Gdk.Key.Page_Down: ToParent(false); break;
-        case Gdk.Key.Page_Up: NavUp(); break;
-        case Gdk.Key.Home: slices.ActiveSlice.ReFormat(FileSlice.BY_TYPE); doScaleIn = true; break;
-        case Gdk.Key.End: slices.ActiveSlice.ReFormat(FileSlice.BY_NAME); doScaleIn = true; break;
-		case Gdk.Key.Escape: Application.Quit (); break;
-        case Gdk.Key.space: ToggleSelected(); break;
-        default:
-            if(args.Event.Key == Gdk.Key.f && (args.Event.State & Gdk.ModifierType.ControlMask) != 0) {
-                findEntry.Visible = true;
-                findEntry.HasFocus = true;
-            } else if( ((IList<String>)ALPHABET).Contains(Gdk.Keyval.Name(args.Event.KeyValue).ToLower()) ) {
-                slices.ActiveSlice.GoToLetter(args.Event.Key.ToString());
-                ChangedActive();
-                ActivateTransition();
-            }
-            break;
+		switch(e.Key) {
+			case OpenTK.Input.Key.Up: MoveForward(); break;
+			case OpenTK.Input.Key.Down: MoveBackward(); break;
+			case OpenTK.Input.Key.Left: MoveLeft(); break;
+			case OpenTK.Input.Key.Right: MoveRight(); break;
+			case OpenTK.Input.Key.Enter: NodeActivated(); break;
+			case OpenTK.Input.Key.BackSpace: ToParent(true); break;
+			case OpenTK.Input.Key.PageDown: ToParent(false); break;
+			case OpenTK.Input.Key.PageUp: NavUp(); break;
+			case OpenTK.Input.Key.Home: slices.ActiveSlice.ReFormat(FileSlice.BY_TYPE); doScaleIn = true; break;
+			case OpenTK.Input.Key.End: slices.ActiveSlice.ReFormat(FileSlice.BY_NAME); doScaleIn = true; break;
+			case OpenTK.Input.Key.Escape: Exit(); break;
+			case OpenTK.Input.Key.Space: ToggleSelected(); break;
+	        default:
+				/*
+	            if(e.Key == Gdk.Key.f && (args.Event.State & Gdk.ModifierType.ControlMask) != 0) {
+	                //findEntry.Visible = true;
+	                //findEntry.HasFocus = true;
+	            } else
+				*/
+				if( ((IList<String>)ALPHABET).Contains(Enum.GetName(typeof(OpenTK.Input.Key), e.Key)/*args.Event.KeyValue*/.ToLower()))  {
+					slices.ActiveSlice.GoToLetter(e.Key.ToString());
+	                ChangedActive();
+	                ActivateTransition();
+	            }
+	            break;
         } 
-        return;      
+        return;
     }
     
+	/*
     protected virtual void OnTextEntered (object o, System.EventArgs args ) {
-        String path = entry4.Text;
+        //String path = entry4.Text;
         
         if(path.EndsWith("/") && path.Length > 1) { 
             path = path.Remove(path.Length-1); 
@@ -375,12 +354,13 @@ public partial class MainWindow : Gtk.Window {
         if (System.IO.Directory.Exists(path)) {
             NewSlice(path);
         } else {
-            statusbar6.Pop(0);
-            statusbar6.Push(0, " Invalid path - " + path);
-        }
-        
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " Invalid path - " + path);
+        }  
     }
+    */
     
+	/*
     protected virtual void OnSearchTextChanged (object sender, System.EventArgs e)
     {
         if(slices.ActiveSlice.GoToPattern(findEntry.Text)) {
@@ -395,21 +375,27 @@ public partial class MainWindow : Gtk.Window {
                                 
         }
     }
+    */
     
+	/*
     protected virtual void OnSearchActivated (object o, System.EventArgs args ) {
         glwidget1.HasFocus = true;
         if(searchFound) {
             NodeActivated();   
         }
     }
+	*/
     
+	/*
     protected virtual void OnFindKeyPress (object o, Gtk.KeyPressEventArgs args)
     {
         if(args.Event.Key == Gdk.Key.Escape) {
             glwidget1.HasFocus = true;
         }
     }
+	*/
    
+	/*
     protected virtual void OnPathChanged (object sender, System.EventArgs e)
     {
         String[] foo = completer.GetCompletions(entry4.Text);
@@ -420,7 +406,9 @@ public partial class MainWindow : Gtk.Window {
             }
         }
     }
+	*/
     
+	/*
     protected virtual void OnAboutActivated (object sender, System.EventArgs e)
     {
         about = new AboutDialog();
@@ -432,6 +420,7 @@ public partial class MainWindow : Gtk.Window {
         about.Run();
         about.Hide();
     }
+	*/
     
     protected virtual void OnNameSortActivated (object sender, System.EventArgs e)
     {
@@ -451,6 +440,7 @@ public partial class MainWindow : Gtk.Window {
         doScaleIn = true;
     }
     
+	/*
     protected virtual void OnVsyncToggle (object sender, System.EventArgs e)
     {
         vsync = VSyncEnabledAction.Active;
@@ -461,38 +451,34 @@ public partial class MainWindow : Gtk.Window {
 		}
 		System.Diagnostics.Debug.WriteLine("Changed vsync to " + vsync);
     }
-    
+    */
     
     // system event handlers
     
-    protected virtual void OnWidgetResize(object o, Gtk.SizeAllocatedArgs args) {
-        if(initted) {
-            ResizeProjectionMatrix(args.Allocation);
-        }
+	protected override void OnResize(EventArgs e)
+	{
+		base.OnResize (e);
+
+		InitOrUpdateProjectionMatrix ();
     }
     
-    protected void OnDeleteEvent(object sender, DeleteEventArgs a) {
-        Application.Quit();
-        a.RetVal = true;
+	//Called when the NativeWindow is about to close.
+	protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
+		base.OnClosing (e);
+
+		GL.Finish();
+		OpenTK.Graphics.GraphicsContext current = (OpenTK.Graphics.GraphicsContext) OpenTK.Graphics.GraphicsContext.CurrentContext;
+		current.MakeCurrent(null);
+		current.Dispose();
     }  
     
+	/*
     protected virtual void OnFindLoseFocus (object o, Gtk.FocusOutEventArgs args) {
-        findEntry.Visible = false;  
-        
+        findEntry.Visible = false;    
     }
-          
-    
-    protected virtual void OnWidgetShuttingDown (object sender, System.EventArgs e)
-    {
-        GL.Finish();
-		OpenTK.Graphics.GraphicsContext current = (OpenTK.Graphics.GraphicsContext) OpenTK.Graphics.GraphicsContext.CurrentContext;
-        current.MakeCurrent(null);
-        current.Dispose();    
-    }
-    
+	*/
     
     // system convenience functions
-    
     private void UpdateCamPosition() {
         // check for camera in position
         if (camDelay > 0.0f) {
@@ -518,7 +504,7 @@ public partial class MainWindow : Gtk.Window {
             if(heightCueEnabled) {
                 SetColourForCamHeight();
             }
-            UpdateDetailsBox();
+            //UpdateDetailsBox();
 	
         } else{
 			cam.Move(camTransitionVector);
@@ -592,23 +578,13 @@ public partial class MainWindow : Gtk.Window {
 
         transitionTargetUpdated = true;
         
-        statusbar6.Pop(0);
-        statusbar6.Push(0, " \"" + slices.ActiveSlice.GetActiveNode().FileName + "\" selected");
-    }
-  
-    private void ResizeProjectionMatrix(Gdk.Rectangle rect) {
-        GL.Viewport(0, 0, rect.Width, rect.Height);    
-		ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, rect.Width / (float)rect.Height, 0.01f, 500f);
+        //statusbar6.Pop(0);
+        //statusbar6.Push(0, " \"" + slices.ActiveSlice.GetActiveNode().FileName + "\" selected");
     }
 
     public void InitOrUpdateProjectionMatrix() {
-        if(glwidget1 == null) {
-            GL.Viewport(0, 0, START_WIDTH, START_HEIGHT);
-			ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, START_WIDTH / (float)START_HEIGHT, 0.01f, 500f);
-        } else { //Default
-            GL.Viewport(0, 0, glwidget1.Allocation.Width, glwidget1.Allocation.Height);    
-			ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, glwidget1.Allocation.Width / (float)glwidget1.Allocation.Height, 0.01f, 500f);
-        }
+            GL.Viewport(0, 0, Width, Height);
+			ShadersCommonProperties.projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(cam.FieldOfView, Width / (float)Height, 0.01f, 500f);
     }
     
 	//TODO Delete usages of SetColourForCamHeight()
@@ -689,24 +665,24 @@ public partial class MainWindow : Gtk.Window {
         fadeOut = true;
         ActivateTransition();
         ChangedActive();
-        statusbar6.Pop(0);
-        statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-        entry4.Text = slices.ActiveSlice.Path;
+        //statusbar6.Pop(0);
+        //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+        //entry4.Text = slices.ActiveSlice.Path;
     }
     
     private void NewSlice(String path) {
         // sanity checks first
 		if(Directory.EnumerateFiles(path).Count() + Directory.EnumerateDirectories(path).Count() == 0) {
-            glwidget1.HasFocus = true;
-            statusbar6.Pop(0);
-            statusbar6.Push(0, " Not Viewing Empty Folder - " + path);
+            //glwidget1.HasFocus = true;
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " Not Viewing Empty Folder - " + path);
             return;
         } 
         
         if(path == slices.ActivePath) {
-            glwidget1.HasFocus = true;
-            statusbar6.Pop(0);
-            statusbar6.Push(0, " Not re-rendering - " + path);
+            //glwidget1.HasFocus = true;
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " Not re-rendering - " + path);
             return;
         }
         
@@ -719,12 +695,14 @@ public partial class MainWindow : Gtk.Window {
             slices.Reset(START_PATH);
         }
         
-        cam.Put(camStartPosition);  
-        SetColourForCamHeight();
+        cam.Put(camStartPosition);
+		if (heightCueEnabled) {
+			SetColourForCamHeight ();
+		}
         doScaleIn = true;
-        glwidget1.HasFocus = true;
-        statusbar6.Pop(0);
-        statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+        //glwidget1.HasFocus = true;
+        //statusbar6.Pop(0);
+        //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
     }
     
 
@@ -742,9 +720,9 @@ public partial class MainWindow : Gtk.Window {
 				await Task.Run(() => slices.AddChildSliceToFileNode (activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
 			}
 			if(activeNode.ChildSlice.NumFiles == 0) {
-                glwidget1.HasFocus = true;
-                statusbar6.Pop(0);
-                statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
+                //glwidget1.HasFocus = true;
+                //statusbar6.Pop(0);
+                //statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
                 return;
             }
             inVerticalTransition = true;
@@ -823,16 +801,16 @@ public partial class MainWindow : Gtk.Window {
 			slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
             ChangedActive();
             ActivateTransition();
-            statusbar6.Pop(0);
-            statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-            entry4.Text = slices.ActiveSlice.Path;
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+            //entry4.Text = slices.ActiveSlice.Path;
         } else {
             // launch the file!            
 			System.Diagnostics.Debug.WriteLine("Launching " + activeNode.File);
             // TODO: Launch using GIO
             System.Diagnostics.Process.Start(activeNode.File);
-            statusbar6.Pop(0);
-            statusbar6.Push(0, " Launched " + activeNode.File);   
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " Launched " + activeNode.File);   
         }
     }
     
@@ -847,15 +825,15 @@ public partial class MainWindow : Gtk.Window {
             slices.MoveDown();   
         }
   
-        glwidget1.HasFocus = true;
+        //glwidget1.HasFocus = true;
         fadeOut = true;
 		sliceToFade.HideAllNodes();
 		inVerticalTransition = true;
         ChangedActive();
         ActivateTransition();
-        statusbar6.Pop(0);
-        statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-        entry4.Text = slices.ActiveSlice.Path;
+        //statusbar6.Pop(0);
+        //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+        //entry4.Text = slices.ActiveSlice.Path;
     }
         
     protected virtual void OnHeightColourToggle (object sender, System.EventArgs e)
@@ -870,12 +848,14 @@ public partial class MainWindow : Gtk.Window {
         return cam;
     }
     
+    /*
     protected virtual void OnWidgetClick (object o, Gtk.ButtonReleaseEventArgs args)
     {  
 		System.Diagnostics.Debug.WriteLine("Widget clicked");
         glwidget1.GrabFocus();
         glwidget1.HasFocus = true;
     }
+    */
     
 	static long GetDirectorySize(string directoryFullName)
 	{
@@ -903,6 +883,7 @@ public partial class MainWindow : Gtk.Window {
 		return totalDirectorySize;
 	}
 
+	/*
     private void UpdateDetailsBox() {
         if(detailsBox.Visible) {
             Node active = slices.ActiveSlice.GetActiveNode();
@@ -938,7 +919,6 @@ public partial class MainWindow : Gtk.Window {
 
 
 			//DUPA:
-			/*
 			Mono.Unix.Native.Statvfs fsbuf = new Mono.Unix.Native.Statvfs();
 			Mono.Unix.Native.Syscall.statvfs(slices.ActiveSlice.GetActiveNode().File, out fsbuf);
 
@@ -950,10 +930,9 @@ public partial class MainWindow : Gtk.Window {
             } else {
                 EnableDetailPermissions(false);
             }
-            */
-        }
-        
+        }   
     }
+	*/
     
     private void UpdateDetailPermissions() {
 
@@ -1004,6 +983,7 @@ public partial class MainWindow : Gtk.Window {
         
     }
     
+	/*
     private void EnableDetailPermissions(bool enable) {
         permissionCheckOR.Sensitive = enable;
         permissionCheckGR.Sensitive = enable;
@@ -1015,7 +995,9 @@ public partial class MainWindow : Gtk.Window {
         permissionCheckGX.Sensitive = enable;
         permissionCheckUX.Sensitive = enable;
     }
+    */
     
+	/*
     private void ApplyNewPermissions() {
         FilePermissions toSet = 0;
         
@@ -1049,17 +1031,22 @@ public partial class MainWindow : Gtk.Window {
         
         Syscall.chmod(slices.ActiveSlice.GetActiveNode().File, toSet);
     }
+	*/
     
+	/*
     protected virtual void OnDetailsVisibleToggled (object sender, System.EventArgs e)
     {
         detailsBox.Visible = !detailsBox.Visible;
         UpdateDetailsBox();
     }
+	*/
     
+	/*
     protected virtual void OnPermissionsToggle (object sender, System.EventArgs e)
     {
         ApplyNewPermissions();
     }
+	*/
     
     private void RenameFile(String newFileName) {
         // rename the file
@@ -1068,8 +1055,8 @@ public partial class MainWindow : Gtk.Window {
         try {
             System.IO.File.Move(active.File, active.File.Replace(active.FileName, newFileName));
         } catch {
-            statusbar6.Pop(0);
-            statusbar6.Push(0, " Failed to rename file");
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " Failed to rename file");
             return;
         }
         slices.ActiveSlice.RenameActiveNode(newFileName);
@@ -1085,8 +1072,10 @@ public partial class MainWindow : Gtk.Window {
 
     }
     
+	/*
     protected virtual void OnNewNameEntered (object sender, System.EventArgs e)
     {
         RenameFile(detailEntryName.Text);
     }
+    */
 }

@@ -1,34 +1,25 @@
 using System;
 using System.Windows.Forms;
-using Gtk;
-using GLib;
+using System.Diagnostics;
+using OpenTK.Graphics.OpenGL4;
 
 namespace glomp
 {
     class MainClass
     {
-		static void OnException(GLib.UnhandledExceptionArgs args)
-		{
-			string errorMsg = "An application error occurred. Please contact the adminstrator " +
-			                  "with the following information:\n\n";
-			errorMsg = errorMsg + args.ExceptionObject.ToString() + "\n";
-			MessageBox.Show(errorMsg, "Glib error error {0}", MessageBoxButtons.AbortRetryIgnore,
-				MessageBoxIcon.Stop);
-			System.Diagnostics.Debug.WriteLine(errorMsg);
-			args.ExitApplication = false;
-		}
+
 
         public static void Main (string[] args)
         {
-			//System.Diagnostics.Debug.WriteLine(OpenTK.Graphics.GraphicsMode.Default);
-			UnhandledExceptionHandler h = new UnhandledExceptionHandler (OnException);
-			ExceptionManager.UnhandledException += h;
             OpenTK.Toolkit.Init();
-			Gtk.Application.Init ();
-            MainWindow win = new MainWindow ();
-            win.Show ();
 
-			Gtk.Application.Run ();
+			using (var game = new MainWindow())
+			{
+				string version = GL.GetString(StringName.Version);
+				Console.WriteLine(version);
+				if (version.StartsWith("4.")) game.Run(0); //game.Run(60, 60);
+				else Debug.WriteLine("Requested OpenGL version not available.");
+			}
         }
     }
 }
