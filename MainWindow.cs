@@ -117,7 +117,7 @@ public partial class MainWindow : GameWindow {
 	public int MaxDegreeOfParallelism { get; set; }
     
     /* Constructor */
-	public MainWindow() : base(800, 600, new GraphicsMode(32, 24, 8, 8), "GlompVR") { //MSAA (MultiSample AntiAliasing enabled - 8 samples
+	public MainWindow() : base(1024, 600, new GraphicsMode(32, 24, 8, 8), "GlompVR") { //MSAA (MultiSample AntiAliasing enabled - 8 samples
 		//Build();
 
 		//System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
@@ -466,6 +466,9 @@ public partial class MainWindow : GameWindow {
 	protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
 		base.OnClosing (e);
 
+        GL.BindTexture(TextureTarget.Texture2D, 0);
+        DirectoryNode.DestroyDirectoryTextures();
+        slices.DestroyAllSlices();
 		GL.Finish();
 		OpenTK.Graphics.GraphicsContext current = (OpenTK.Graphics.GraphicsContext) OpenTK.Graphics.GraphicsContext.CurrentContext;
 		current.MakeCurrent(null);
@@ -713,12 +716,28 @@ public partial class MainWindow : GameWindow {
 
     private async void NodeActivated() {
 		Trace.WriteLine ("NodeActivated");
+
         Node activeNode = slices.ActiveSlice.GetActiveNode();
         if(activeNode.IsDirectory) {
-			if (activeNode.ChildSlice == null) {
+
+			//checking if we already have this slice generated
+			if(activeNode.ChildSlice != null && activeNode.ChildSlice.Path == activeNode.File) {
+				activeNode.NodeActivated = true;
+				sliceToFade = slices.ActiveSlice;
+				slices.MoveUp();
+				inVerticalTransition = true;
+				fadeOut = true;
+				scaleIn = true;
+				slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
+				slices.ActiveSlice.GoToNode (0); //Activate first node on that slice, not the one that was activated previously (to differentiate this operation from NavUp()
+				ChangedActive();
+				ActivateTransition();
+				return;
+			} else if (activeNode.ChildSlice == null) {
 				activeNode.NodeActivated = true;
 				await Task.Run(() => slices.AddChildSliceToFileNode (activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
 			}
+
 			if(activeNode.ChildSlice.NumFiles == 0) {
                 //glwidget1.HasFocus = true;
                 //statusbar6.Pop(0);

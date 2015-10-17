@@ -29,7 +29,7 @@ namespace glomp {
 		protected NodeType type;
         private String fileName;
         private String file;
-        protected int textureIndex;
+        protected uint labelTextureIndex;
         private bool isVisible;
         protected bool hasTexture;
         protected bool isActive;
@@ -109,7 +109,7 @@ namespace glomp {
         
         public String FileName {
             get { return fileName; }
-            set { fileName = value; UpdateBitmap(false); }
+            set { fileName = value; UpdateLabelBitmap(false); }
         }
         
         public String File {
@@ -165,7 +165,16 @@ namespace glomp {
 
 
         public virtual void GenTexture(bool force) {
-			//To be overwritten in derived Node class
+			Trace.WriteLine ("GenTexture");
+			if(hasTexture) {
+				if(!force) {
+					return;
+				}
+			}
+			hasTexture = true;
+
+			UpdateLabelBitmap(false);
+			GenerateLabelTexture ();
         }
         
         
@@ -236,7 +245,7 @@ namespace glomp {
 
 			// bind texture to texture unit 0
 			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, textureIndex);
+			GL.BindTexture(TextureTarget.Texture2D, labelTextureIndex);
         }
         
 
@@ -277,7 +286,7 @@ namespace glomp {
           
         
         // updates the bitmap we use for our text
-        protected void UpdateBitmap(bool activeTexture) {
+        protected void UpdateLabelBitmap(bool activeTexture) {
 			Trace.WriteLine ("UpdateBitmap");
             textLabelBmp = new Bitmap(textureWidth, textureHeight);
             //textSize = 20;
@@ -321,6 +330,22 @@ namespace glomp {
                 }
             }
         }
+
+
+		protected void GenerateLabelTexture () {
+			// Generate texture for label
+			TextureTarget textureTarget;
+			TextureLoaderParameters.FlipImages = false;
+			TextureLoaderParameters.MagnificationFilter = TextureMagFilter.Linear;
+			TextureLoaderParameters.MinificationFilter = TextureMinFilter.Linear;
+			TextureLoaderParameters.WrapModeS = TextureWrapMode.Clamp;
+			TextureLoaderParameters.WrapModeT = TextureWrapMode.Clamp;
+			ImageGDI.LoadFromDisk(textLabelBmp, out labelTextureIndex, out textureTarget);
+			System.Diagnostics.Debug.WriteLine("Loaded texture for label with handle " + labelTextureIndex + " as " + textureTarget);
+			textLabelBmp.Dispose();
+			textLabelBmp = null;
+		}
+
         
         public void SetParent(FileSlice newParent) {
             parentSlice = newParent;

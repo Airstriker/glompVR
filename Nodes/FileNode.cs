@@ -22,8 +22,8 @@ namespace glomp
 		private bool isExecutable = false;
 		private bool isThumbnailed = false;
 		private Bitmap thumbBmp;
-		private int thumbTextureIndex;
-		private int fileTextureIndex; //texture for ordinary files (just a one pixel coloured texture in repeat mode)
+		private uint thumbTextureIndex;
+		private uint fileTextureIndex; //texture for ordinary files (just a one pixel coloured texture in repeat mode)
 
 		public String FileExtension {
 			get { return fileExtension; }
@@ -64,98 +64,27 @@ namespace glomp
 
 
 		public override void GenTexture(bool force) {
-			Trace.WriteLine ("GenTexture");
-			if(hasTexture) {
-				if(!force) {
-					return;
-				}
-			}
-			System.Drawing.Imaging.BitmapData data;
-			hasTexture = true;
-			// initialise for new texture
-			textureIndex = GL.GenTexture();
-			GL.BindTexture(TextureTarget.Texture2D, textureIndex);
-			// set up texture filters
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
-
-			UpdateBitmap(false);
-
-			// upload data to openGL
-			data = textLabelBmp.LockBits(new Rectangle(0, 0, textLabelBmp.Width, textLabelBmp.Height), 
-				System.Drawing.Imaging.ImageLockMode.ReadOnly, 
-				System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, textLabelBmp.Width, textLabelBmp.Height, 0,
-				PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
-			textLabelBmp.UnlockBits(data);
-			textLabelBmp.Dispose();
+			base.GenTexture (force);
 
 			// right... now do the thumbnail if we have one
-			if(thumbBmp != null) {
-
-				// set up GL for the texture
-				thumbTextureIndex = GL.GenTexture();
-				GL.BindTexture(TextureTarget.Texture2D, thumbTextureIndex);
-
-				//get at the bitmap data for the thumbnail
-				/*
-				thumbBmp = new Bitmap(thumbFileName);
-                
-                Bitmap scaled = new Bitmap(128, 128);
-                int x = 0;
-                int y = 0;
-                if(thumbBmp.Width > thumbBmp.Height) {
-                	y = (thumbBmp.Width - thumbBmp.Height)/2;
-                    x = 0;
-                } else if(thumbBmp.Width < thumbBmp.Height) {
-                    y = 0;
-                    x = (thumbBmp.Height - thumbBmp.Width)/2;
-                } else {
-                    x = 0;
-                    y = 0;
-                } 
-                    
-                using (Graphics gfx = Graphics.FromImage(scaled)) {
-                	gfx.Clear(Color.White);
-                    gfx.DrawImageUnscaled(thumbBmp, x, y);
-                }
-                thumbBmp = scaled;
-				*/
-
-				thumbBmp = Util.ResizeBitmap (thumbBmp, 128, 128);
-
-				// upload data to openGL
-				data = thumbBmp.LockBits(new Rectangle(0, 0, thumbBmp.Width, thumbBmp.Height), 
-					System.Drawing.Imaging.ImageLockMode.ReadOnly, 
-					System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-				GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, thumbBmp.Width, thumbBmp.Height, 0,
-					PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
-
-				thumbBmp.UnlockBits(data);
-                thumbBmp = null; //this image is no longer needed as long as we have texture
-
-				// set texture parameters
-
-				// Generate mipmaps
-				GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-
-				// When MAGnifying the image (no bigger mipmap available), use LINEAR filtering
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-				// When MINifying the image, use a LINEAR blend of two mipmaps, each filtered LINEARLY too
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
-
+            if (thumbBmp != null)
+            {
+                //Generate texture for thumbnail
+				TextureTarget textureTarget;
+                TextureLoaderParameters.MagnificationFilter = TextureMagFilter.Linear;
+                TextureLoaderParameters.MinificationFilter = TextureMinFilter.LinearMipmapLinear;
+                TextureLoaderParameters.WrapModeS = TextureWrapMode.Clamp;
+                TextureLoaderParameters.WrapModeT = TextureWrapMode.Clamp;
+                ImageGDI.LoadFromDisk(thumbBmp, out thumbTextureIndex, out textureTarget);
+                System.Diagnostics.Debug.WriteLine("Loaded texture for thumbnail " + ThumbFileName + " with handle " + thumbTextureIndex + " as " + textureTarget);
+                thumbBmp.Dispose(); //this image is no longer needed as long as we have texture
+                thumbBmp = null;
 
 				isThumbnailed = true;
 
 			} else {
 				// generate texture for ordinary files (just a one pixel coloured texture in repeat mode)
-				fileTextureIndex = GL.GenTexture();
+                GL.GenTextures(1, out fileTextureIndex);
 
 				// bind the texture
 				GL.BindTexture(TextureTarget.Texture2D, fileTextureIndex);
@@ -188,8 +117,8 @@ namespace glomp
 				GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image);
 
 				// set texture parameters
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
 			}
@@ -202,7 +131,6 @@ namespace glomp
 			MoveIntoPosition(true, ref boxModelMatrix);
 
 			if(isThumbnailed && !isDimmed) {
-				//GL.TexEnv (TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (float)TextureEnvModeCombine.Replace);
 				NodeShader.Instance.TextureEnvModeCombine = TextureEnvModeCombine.Replace;  //No lightening applied to thumbnailed nodes - for better visual quality
 			}
 
@@ -318,10 +246,9 @@ namespace glomp
 			Trace.WriteLine ("DestroyTexture");
 			if(hasTexture) {
 				hasTexture = false;
-				int[] textures = {textureIndex,thumbTextureIndex};
-				GL.DeleteTextures(2, textures);
+                uint[] textures = { labelTextureIndex, thumbTextureIndex, fileTextureIndex };
+				GL.DeleteTextures(3, textures);
 			}
-			//textLabelBmp.Dispose();
 		}
 
 

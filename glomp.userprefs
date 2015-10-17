@@ -1,36 +1,37 @@
 ﻿<Properties StartupItem="glomp.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="VBOUtil.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="TextureLoader\LoaderGDI.cs">
     <Files>
-      <File FileName="SliceManager.cs" Line="1" Column="1" />
-      <File FileName="FileSlice.cs" Line="528" Column="50" />
+      <File FileName="SliceManager.cs" Line="121" Column="38" />
+      <File FileName="FileSlice.cs" Line="360" Column="90" />
       <File FileName="NodeManager.cs" Line="1" Column="1" />
-      <File FileName="MainWindow.cs" Line="190" Column="40" />
+      <File FileName="MainWindow.cs" Line="734" Column="26" />
       <File FileName="Util.cs" Line="1" Column="1" />
-      <File FileName="SkyBox.cs" Line="1" Column="1" />
       <File FileName="Main.cs" Line="1" Column="1" />
-      <File FileName="SceneNode.cs" Line="1" Column="1" />
+      <File FileName="SceneNode.cs" Line="24" Column="9" />
       <File FileName="glomp.csproj" Line="1" Column="1" />
-      <File FileName="TextureManager.cs" Line="1" Column="1" />
       <File FileName="Mouse.cs" Line="1" Column="1" />
-      <File FileName="FrustrumCuller.cs" Line="7" Column="29" />
+      <File FileName="FrustrumCuller.cs" Line="1" Column="1" />
       <File FileName="README" Line="1" Column="1" />
-      <File FileName="Nodes\FileNode.cs" Line="1" Column="1" />
-      <File FileName="Nodes\Node.cs" Line="254" Column="34" />
+      <File FileName="Nodes\FileNode.cs" Line="78" Column="39" />
+      <File FileName="Nodes\Node.cs" Line="337" Column="4" />
       <File FileName="Shaders\LabelShader.cs" Line="1" Column="1" />
-      <File FileName="Shaders\SkyBoxShader.cs" Line="1" Column="1" />
-      <File FileName="Nodes\DirectoryNode.cs" Line="180" Column="26" />
+      <File FileName="Nodes\DirectoryNode.cs" Line="85" Column="4" />
       <File FileName="Shaders\NodeShader.cs" Line="1" Column="1" />
       <File FileName="Nodes\DriveNode.cs" Line="1" Column="1" />
       <File FileName="Shaders\GLSL Shaders\nodeFragmentShader.glsl" Line="1" Column="1" />
-      <File FileName="gtk-gui\MainWindow.cs" Line="1" Column="1" />
       <File FileName="Camera.cs" Line="1" Column="1" />
-      <File FileName="VBOUtil.cs" Line="151" Column="43" />
-      <File FileName="Shapes\DirNodeShape.cs" Line="69" Column="2" />
+      <File FileName="VBOUtil.cs" Line="1" Column="1" />
+      <File FileName="Shapes\DirNodeShape.cs" Line="1" Column="1" />
+      <File FileName="TextureLoader\LoaderGDI.cs" Line="163" Column="35" />
+      <File FileName="TextureLoader\LoaderStatics.cs" Line="37" Column="41" />
+      <File FileName="TextureLoader\LoaderDDS.cs" Line="346" Column="17" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="C:\Julian\Projekty\GitHub\glompVR\FileSlice.cs" line="449" column="1" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

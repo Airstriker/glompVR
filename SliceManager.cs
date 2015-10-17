@@ -45,12 +45,8 @@ namespace glomp {
         
         public int Reset(String path) {
 			Trace.WriteLine ("SliceManager.Reset");
-            // destroy gl textures
-            foreach(var slice in slices) {
-                slice.Destroy();
-            }
-            // destroy slices
-            slices.Clear();
+
+            DestroyAllSlices();
             
             // reset height
             activeSliceHeight = 0;
@@ -71,6 +67,16 @@ namespace glomp {
             activeSliceNode = slices.AddLast(activeSlice);
 
             return activeSliceHeight;
+        }
+
+        public void DestroyAllSlices() {
+            // destroy gl textures
+            foreach (var slice in slices)
+            {
+                slice.Destroy();
+            }
+            // destroy slices
+            slices.Clear();
         }
         
 		public void AddSliceAbove(FileSlice activeNodeChildSlice) {

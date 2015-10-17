@@ -76,42 +76,12 @@ namespace glomp
 			int i = 0;
 			foreach (String texture in dirNodeTextures) {
                 TextureTarget textureTarget;
+                TextureLoaderParameters.MagnificationFilter = TextureMagFilter.Linear;
+                TextureLoaderParameters.MinificationFilter = TextureMinFilter.LinearMipmapLinear;
                 ImageGDI.LoadFromDisk(texture, out nodeTextures[i], out textureTarget);
                 System.Diagnostics.Debug.WriteLine("Loaded " + texture + " with handle " + nodeTextures[i] + " as " + textureTarget);
                 i++;
 			}
-		}
-
-
-		public override void GenTexture(bool force) {
-			Trace.WriteLine ("GenTexture");
-			if(hasTexture) {
-				if(!force) {
-					return;
-				}
-			}
-			System.Drawing.Imaging.BitmapData data;
-			hasTexture = true;
-			// initialise for new texture
-			textureIndex = GL.GenTexture();
-			GL.BindTexture(TextureTarget.Texture2D, textureIndex);
-			// set up texture filters
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
-
-			UpdateBitmap(false);
-
-			// upload data to openGL
-			data = textLabelBmp.LockBits(new Rectangle(0, 0, textLabelBmp.Width, textLabelBmp.Height), 
-				System.Drawing.Imaging.ImageLockMode.ReadOnly, 
-				System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, textLabelBmp.Width, textLabelBmp.Height, 0,
-				PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0); 
-			textLabelBmp.UnlockBits(data);
-			textLabelBmp.Dispose();
 		}
 
 
@@ -215,12 +185,15 @@ namespace glomp
 			Trace.WriteLine ("DestroyTexture");
 			if(hasTexture) {
 				hasTexture = false;
-				int[] textures = {textureIndex};
+				uint[] textures = {labelTextureIndex};
 				GL.DeleteTextures(1, textures);
 			}
-			//textLabelBmp.Dispose();
 		}
 
+        public static void DestroyDirectoryTextures() {
+            //Called only on Application closure, because these are textures common for all directories
+            GL.DeleteTextures(DirectoryNode.nodeTextures.Length, DirectoryNode.nodeTextures);
+        }
 
 		public float GetHeightForFolder(int numChildren) {
 			if(numChildren > 200) {

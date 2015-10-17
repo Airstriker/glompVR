@@ -102,6 +102,8 @@ namespace glomp
 			mSize = aSize;
 			if (skyBoxTexturePath !=null) {
                 TextureTarget textureTarget;
+                TextureLoaderParameters.MagnificationFilter = TextureMagFilter.Linear;
+                TextureLoaderParameters.MinificationFilter = TextureMinFilter.Linear;
                 ImageGDI.LoadFromDisk(skyBoxTexturePath, out skyBoxSingleTexture, out textureTarget);
                 System.Diagnostics.Debug.WriteLine("Loaded " + skyBoxTexturePath + " with handle " + skyBoxSingleTexture + " as " + textureTarget);
 			}

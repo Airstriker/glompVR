@@ -357,7 +357,7 @@ namespace glomp {
 				ShellObject nodeFile = ShellObject.FromParsingName (fileNodeName);
 				nodeFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
 				try {
-					((FileNode)node).ThumbBmp = nodeFile.Thumbnail.Bitmap;
+					((FileNode)node).ThumbBmp = Util.ResizeBitmap (nodeFile.Thumbnail.Bitmap, 128, 128);
 				} catch {
 					//NotSupportedException
 					System.Diagnostics.Debug.WriteLine ("Error getting the thumbnail. The selected file does not have a valid thumbnail or thumbnail handler.");
