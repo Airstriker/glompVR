@@ -1,7 +1,6 @@
 ﻿using System;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Graphics;
 using System.IO;
 
 namespace glomp
@@ -10,7 +9,7 @@ namespace glomp
 	{
 		private static LabelShader instance;
 
-		public Color4 LabelColor { get; set; }
+        public OpenTK.Graphics.Color4 LabelColor { get; set; }
 
 
 		/// <summary>
@@ -30,8 +29,8 @@ namespace glomp
              * which returns the ID for a new program object, which we'll store in pgmID. */
 			ShaderProgramID = GL.CreateProgram();
 
-			ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\labelVertexShader.glsl", ShaderType.VertexShader, ShaderProgramID, out vertexShaderID);
-			ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\labelFragmentShader.glsl", ShaderType.FragmentShader, ShaderProgramID, out fragmentShaderID);
+            ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\labelVertexShader.glsl", ShaderType.VertexShader, ShaderProgramID, out vertexShaderID);
+            ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\labelFragmentShader.glsl", ShaderType.FragmentShader, ShaderProgramID, out fragmentShaderID);
 
 			/** Now that the shaders are added, the program needs to be linked.
              * Like C code, the code is first compiled, then linked, so that it goes

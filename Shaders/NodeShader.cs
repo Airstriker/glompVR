@@ -38,8 +38,8 @@ namespace glomp
              * which returns the ID for a new program object, which we'll store in pgmID. */
 			ShaderProgramID = GL.CreateProgram();
 
-			ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\nodeVertexShader.glsl", ShaderType.VertexShader, ShaderProgramID, out vertexShaderID);
-			ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\nodeFragmentShader.glsl", ShaderType.FragmentShader, ShaderProgramID, out fragmentShaderID);
+            ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\nodeVertexShader.glsl", ShaderType.VertexShader, ShaderProgramID, out vertexShaderID);
+            ShadersUtil.loadShader("..\\..\\Shaders\\GLSL Shaders\\nodeFragmentShader.glsl", ShaderType.FragmentShader, ShaderProgramID, out fragmentShaderID);
 
 			/** Now that the shaders are added, the program needs to be linked.
              * Like C code, the code is first compiled, then linked, so that it goes

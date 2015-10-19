@@ -4,12 +4,12 @@ using System.Runtime.CompilerServices;
 // Information about this assembly is defined by the following attributes. 
 // Change them to the values specific to your project.
 
-[assembly: AssemblyTitle("glomp")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("glompVR")]
+[assembly: AssemblyDescription("Virtual Reality Ready File Manager")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("")]
+[assembly: AssemblyCopyright("Airstriker")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

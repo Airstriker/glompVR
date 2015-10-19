@@ -71,6 +71,11 @@
             </summary>
             <param name="e">A System.EventArgs that contains the event data.</param>
         </member>
+        <member name="M:OpenTK.GLControl.PerformContextUpdate">
+            <summary>
+            Execute the delayed context update
+            </summary>
+        </member>
         <member name="M:OpenTK.GLControl.OnParentChanged(System.EventArgs)">
             <summary>
             Raises the ParentChanged event.
@@ -157,6 +162,29 @@
         <member name="P:OpenTK.GLControl.WindowInfo">
             <summary>
             Gets the <see cref="T:OpenTK.Platform.IWindowInfo"/> for this instance.
+            </summary>
+        </member>
+        <member name="T:OpenTK.GLControl.DelayUpdate">
+            <summary>
+            Needed to delay the invoke on OS X. Also needed because OpenTK is .NET 2, otherwise I'd use an inline Action.
+            </summary>
+        </member>
+        <member name="M:OpenTK.Platform.MacOS.Agl.aglChoosePixelFormat(System.IntPtr,System.Int32,System.Int32[])">
+            <summary>
+            Use this overload only with IntPtr.Zero for the first argument.
+            </summary>
+            <param name="gdevs">
+            </param>
+            <param name="ndev">
+            </param>
+            <param name="attribs">
+            </param>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:OpenTK.Platform.MacOS.AglContext">
+            <summary>
+            AGL context implementation for WinForms compatibility.
             </summary>
         </member>
     </members>

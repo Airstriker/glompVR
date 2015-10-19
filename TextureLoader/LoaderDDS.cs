@@ -19,7 +19,6 @@ using System.IO;
 using System.Diagnostics;
 
 using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
 namespace glomp
@@ -47,7 +46,7 @@ namespace glomp
         private static int _Width, _Height, _Depth, _MipMapCount;
         private static int _BytesForMainSurface; // must be handled with care when implementing uncompressed formats!
         private static byte _BytesPerBlock;
-        private static PixelInternalFormat _PixelInternalFormat;
+        private static OpenTK.Graphics.OpenGL.PixelInternalFormat _PixelInternalFormat;
         #endregion Simplified In-Memory representation of the Image
 
         #region Flag Enums
@@ -208,11 +207,11 @@ namespace glomp
         /// <param name="filename">The name of the file you wish to load, including path and file extension.</param>
         /// <param name="texturehandle">0 if invalid, otherwise a Texture Object usable with GL.BindTexture().</param>
         /// <param name="dimension">0 if invalid, will output what was loaded (typically Texture1D/2D/3D or Cubemap)</param>
-        public static void LoadFromDisk( string filename, out uint texturehandle, out TextureTarget dimension )
+        public static void LoadFromDisk(string filename, out uint texturehandle, out TextureTarget dimension)
         {
             #region Prep data
             // invalidate whatever it was before
-            dimension = (TextureTarget) 0;
+            dimension = (TextureTarget)0;
             texturehandle = TextureLoaderParameters.OpenGLDefaultTexture;
             ErrorCode GLError = ErrorCode.NoError;
 
@@ -760,7 +759,7 @@ namespace glomp
                    "\nCaps2: " + dwCaps2 + " (" + (eDDSCAPS2) dwCaps2 + ")";
         }
 
-        private static string GetDescriptionFromMemory( string filename, TextureTarget Dimension )
+        private static string GetDescriptionFromMemory(string filename, OpenTK.Graphics.OpenGL.TextureTarget Dimension)
         {
             return "\nFile: " + filename +
                    "\nDimension: " + Dimension +

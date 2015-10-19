@@ -17,14 +17,13 @@ using System.Drawing;
 using System.Drawing.Imaging;
 
 using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
 namespace glomp
 {
     class ImageGDI
     {
-        public static void LoadFromDisk( string filename, out uint texturehandle, out TextureTarget dimension )
+        public static void LoadFromDisk(string filename, out uint texturehandle, out OpenTK.Graphics.OpenGL.TextureTarget dimension)
         {
             Bitmap CurrentBitmap = null;
 
@@ -34,7 +33,7 @@ namespace glomp
                 LoadFromDisk(CurrentBitmap, out texturehandle, out dimension);
             } catch ( Exception e )
             {
-                dimension = (TextureTarget) 0;
+                dimension = (OpenTK.Graphics.OpenGL.TextureTarget)0;
                 texturehandle = TextureLoaderParameters.OpenGLDefaultTexture;
                 throw new ArgumentException( "Texture Loading Error: Failed to read file " + filename + ".\n" + e );
             } finally
@@ -44,7 +43,7 @@ namespace glomp
         }
 
 
-        public static void LoadFromDisk(System.Drawing.Bitmap CurrentBitmap, out uint texturehandle, out TextureTarget dimension)
+        public static void LoadFromDisk(System.Drawing.Bitmap CurrentBitmap, out uint texturehandle, out OpenTK.Graphics.OpenGL.TextureTarget dimension)
         {
             dimension = (TextureTarget)0;
             texturehandle = TextureLoaderParameters.OpenGLDefaultTexture;

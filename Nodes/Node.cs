@@ -1,7 +1,6 @@
 using System;
 using System.Drawing;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Graphics;
 using OpenTK;
 using System.Diagnostics;
 
@@ -219,10 +218,10 @@ namespace glomp {
 						labelModelMatrix = translationMatrix * labelModelMatrix;
                     }
 					GL.Disable(EnableCap.DepthTest);
-					LabelShader.Instance.LabelColor = new Color4( 1.0f, 0.4f, 0.4f, parentSlice.Alpha );
+                    LabelShader.Instance.LabelColor = new OpenTK.Graphics.Color4(1.0f, 0.4f, 0.4f, parentSlice.Alpha);
 
                 } else {
-					LabelShader.Instance.LabelColor = new Color4( 0.4f, 1f, 0.8f, parentSlice.Alpha );
+                    LabelShader.Instance.LabelColor = new OpenTK.Graphics.Color4(0.4f, 1f, 0.8f, parentSlice.Alpha);
                 }
 
 				GL.UseProgram (LabelShader.Instance.ShaderProgramID);

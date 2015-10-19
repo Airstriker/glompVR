@@ -80,7 +80,7 @@ namespace glomp
 
 		/* TEXTURES  */
 		/* SkyBox Texture - used with VBO (more textures would be related to much higher overhead when using VBO) */
-		String skyBoxTexturePath = "..\\..\\resources\\skybox_front.bmp";
+        String skyBoxTexturePath = "..\\..\\resources\\skybox_front.bmp";
 		private static uint skyBoxSingleTexture;
 
 		/* TEXTURE INDEXes  */
