@@ -799,59 +799,55 @@ public partial class MainWindow : GameWindow
         Trace.WriteLine("NodeActivated");
 
         Node activeNode = slices.ActiveSlice.GetActiveNode();
-        if (activeNode.IsDirectory)
-        {
 
-            //checking if we already have this slice generated
-            if (activeNode.ChildSlice != null && activeNode.ChildSlice.Path == activeNode.File)
-            {
-                activeNode.NodeActivated = true;
-                sliceToFade = slices.ActiveSlice;
-                slices.MoveUp();
-                inVerticalTransition = true;
-                fadeOut = true;
-                scaleIn = true;
-                slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
-                slices.ActiveSlice.GoToNode(0); //Activate first node on that slice, not the one that was activated previously (to differentiate this operation from NavUp()
-                ChangedActive();
-                ActivateTransition();
-                return;
-            }
-            else if (activeNode.ChildSlice == null)
-            {
-                activeNode.NodeActivated = true;
-                await Task.Run(() => slices.AddChildSliceToFileNode(activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
-            }
+		if (!activeNode.NodeActivated) { //Checking if node is already activated
+			if (activeNode.IsDirectory) {
+				//checking if we already have this slice generated
+				if (activeNode.ChildSlice != null && activeNode.ChildSlice.Path == activeNode.File) {
+					activeNode.NodeActivated = true;
+					sliceToFade = slices.ActiveSlice;
+					slices.MoveUp ();
+					inVerticalTransition = true;
+					fadeOut = true;
+					scaleIn = true;
+					slices.ActiveSlice.ReFormat (FileSlice.BY_NAME);
+					slices.ActiveSlice.GoToNode (0); //Activate first node on that slice, not the one that was activated previously (to differentiate this operation from NavUp()
+					ChangedActive ();
+					ActivateTransition ();
+					return;
+				} else if (activeNode.ChildSlice == null) {
+					activeNode.NodeActivated = true;
+					await Task.Run (() => slices.AddChildSliceToFileNode (activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
+				}
 
-            if (activeNode.ChildSlice.NumFiles == 0)
-            {
-                //glwidget1.HasFocus = true;
-                //statusbar6.Pop(0);
-                //statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
-                return;
-            }
-            inVerticalTransition = true;
-            fadeOut = true;
-            scaleIn = true;
-            sliceToFade = slices.ActiveSlice;
-            await MainThreadDispatcher.InvokeAsync(() => slices.AddSliceAbove(activeNode.ChildSlice)); //dispatches work to the UI thread (this is needed due to OpenGL calls in this method (Texture Generation)!). MainThreadDispatcher is set at MainWindow() constructor. Look here for the explanation: http://www.opentk.com/node/3841
+				if (activeNode.ChildSlice.NumFiles == 0) {
+					//glwidget1.HasFocus = true;
+					//statusbar6.Pop(0);
+					//statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
+					return;
+				}
+				inVerticalTransition = true;
+				fadeOut = true;
+				scaleIn = true;
+				sliceToFade = slices.ActiveSlice;
+				await MainThreadDispatcher.InvokeAsync (() => slices.AddSliceAbove (activeNode.ChildSlice)); //dispatches work to the UI thread (this is needed due to OpenGL calls in this method (Texture Generation)!). MainThreadDispatcher is set at MainWindow() constructor. Look here for the explanation: http://www.opentk.com/node/3841
 
 
-            //http://www.opentk.com/doc/graphics/graphicscontext
+				//http://www.opentk.com/doc/graphics/graphicscontext
 
-            // The new context must be created on a new thread
-            // (see remarks section, below)
-            // We need to create a new window for the new context.
-            // Note 1: new windows remain invisible unless you call
-            //         INativeWindow.Visible = true or IGameWindow.Run()
-            // Note 2: invisible windows fail the pixel ownership test.
-            //         This means that the contents of the front buffer are undefined, i.e.
-            //         you cannot use an invisible window for offscreen rendering.
-            //         You will need to use a framebuffer object, instead.
-            // Note 3: context sharing will fail if the main context is in use.
-            // Note 4: this code can be used as-is in a GLControl or GameWindow.
+				// The new context must be created on a new thread
+				// (see remarks section, below)
+				// We need to create a new window for the new context.
+				// Note 1: new windows remain invisible unless you call
+				//         INativeWindow.Visible = true or IGameWindow.Run()
+				// Note 2: invisible windows fail the pixel ownership test.
+				//         This means that the contents of the front buffer are undefined, i.e.
+				//         you cannot use an invisible window for offscreen rendering.
+				//         You will need to use a framebuffer object, instead.
+				// Note 3: context sharing will fail if the main context is in use.
+				// Note 4: this code can be used as-is in a GLControl or GameWindow.
 
-            /*
+				/*
             IWindowInfo m_window_info;
             IGraphicsContext m_graphics_context;
 
@@ -903,22 +899,21 @@ public partial class MainWindow : GameWindow
             */
 
 
-            slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
-            ChangedActive();
-            ActivateTransition();
-            //statusbar6.Pop(0);
-            //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-            //entry4.Text = slices.ActiveSlice.Path;
-        }
-        else
-        {
-            // launch the file!            
-            System.Diagnostics.Debug.WriteLine("Launching " + activeNode.File);
-            // TODO: Launch using GIO
-            System.Diagnostics.Process.Start(activeNode.File);
-            //statusbar6.Pop(0);
-            //statusbar6.Push(0, " Launched " + activeNode.File);   
-        }
+				slices.ActiveSlice.ReFormat (FileSlice.BY_NAME);
+				ChangedActive ();
+				ActivateTransition ();
+				//statusbar6.Pop(0);
+				//statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+				//entry4.Text = slices.ActiveSlice.Path;
+			} else {
+				// launch the file!            
+				System.Diagnostics.Debug.WriteLine ("Launching " + activeNode.File);
+				// TODO: Launch using GIO
+				System.Diagnostics.Process.Start (activeNode.File);
+				//statusbar6.Pop(0);
+				//statusbar6.Push(0, " Launched " + activeNode.File);   
+			}
+		}
     }
 
     private void ToParent(bool clearAbove)
