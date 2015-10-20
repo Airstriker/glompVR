@@ -55,9 +55,12 @@ namespace glomp {
         private int currentSortType = BY_NAME;
         private bool visible = true;
         private MainWindow parentWindow;
+        private Node lastActivatedNode;
+        private bool isAnyNodeCurrentlyActivated = false;
         public int cullCount = 0;
 		public static readonly bool showHidden = true;
         public Node[] fileNodes;
+        private Node parentNode;
 
 		//Shaders related stuff
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,16 +125,42 @@ namespace glomp {
         public int NumFiles {
             get { return numFiles; }
         }
-        
+
+        public Node LastActivatedNode {
+            get { return lastActivatedNode; }
+            set { lastActivatedNode = value; }
+        }
+
+        public bool IsAnyNodeCurrentlyActivated {
+            get { return isAnyNodeCurrentlyActivated; }
+            set { isAnyNodeCurrentlyActivated = value; }
+        }
+
+        public Node ParentNode
+        {
+            get { return parentNode; }
+        }
+
         public FileSlice(String _path, int _sliceHeight, MainWindow parent)
             : base () {
 			Trace.WriteLine ("FileSlice");
+            parentNode = null;
 			path = _path;
 			sliceHeight = _sliceHeight;
 			parentWindow = parent;
 		}
 
-		public void FillFileSliceWithDrives () {
+        public FileSlice(Node parentNode, int _sliceHeight, MainWindow parent)
+            : base()
+        {
+            Trace.WriteLine("FileSlice");
+            this.parentNode = parentNode;
+            path = parentNode.File;
+            sliceHeight = _sliceHeight;
+            parentWindow = parent;
+        }
+
+        public void FillFileSliceWithDrives () {
 			DriveInfo[] drives;
 			drives = DriveInfo.GetDrives();
 			foreach (DriveInfo drive in drives) {
@@ -593,6 +622,9 @@ namespace glomp {
         public void Destroy() {
             foreach(var node in fileNodes) {
                 node.DestroyTexture();
+            }
+            if (parentNode != null) {
+                parentNode.ChildSlice = null;
             }
         }
         

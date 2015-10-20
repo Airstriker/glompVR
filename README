@@ -1,6 +1,6 @@
 Virtual Reality ready 3d File Manager based on glomp by sebclarke (https://github.com/sebclarke/Glomp).
 Opposite to original glomp, this version is Windows only.
-Compile with Xamarin Studio 5.1 on Windows, open the .sln file in Xamarin and away you go! Enjoy ;)
+Compile (only!) with Visual Studio 2015 on Windows, open the .sln file in Visual Studio and away you go! Enjoy ;)
 
 Needed:
 .NETFramework,Version=v4.5

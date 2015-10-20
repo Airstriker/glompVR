@@ -79,14 +79,20 @@ namespace glomp {
             slices.Clear();
         }
         
-		public void AddSliceAbove(FileSlice activeNodeChildSlice) {
-			Trace.WriteLine ("AddSliceAbove");
+        public void DestroyAllSlicesAboveActiveSlice() {
             // destroy all existing slices above us
-            while(activeSliceNode != slices.Last) {
+            while (activeSliceNode != slices.Last)
+            {
                 slices.Last.Value.Destroy();
                 slices.RemoveLast();
             }
-            
+        }
+
+		public void AddSliceAbove(FileSlice activeNodeChildSlice) {
+			Trace.WriteLine ("AddSliceAbove");
+
+            DestroyAllSlicesAboveActiveSlice();
+
             // set its position
             Vector3 newSlicePosition = activeSlice.Position + (Vector3.UnitY * SLICE_SPACING);
             
@@ -117,7 +123,7 @@ namespace glomp {
 
 		public void AddChildSliceToFileNode(Node node) {
 			// make new fileSlice, set to active
-			node.ChildSlice = new FileSlice(node.File, activeSliceHeight + 1 , parentWindow);
+			node.ChildSlice = new FileSlice(node, activeSliceHeight + 1 , parentWindow);
 			node.ChildSlice.FillFileSliceWithDirectoriesAndFiles ();
 		}
 

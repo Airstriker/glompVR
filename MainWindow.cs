@@ -735,15 +735,17 @@ public partial class MainWindow : GameWindow
 
     private void NavUp()
     {
-        sliceToFade = slices.ActiveSlice;
-        slices.MoveUp();
-        inVerticalTransition = true;
-        fadeOut = true;
-        ActivateTransition();
-        ChangedActive();
-        //statusbar6.Pop(0);
-        //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-        //entry4.Text = slices.ActiveSlice.Path;
+        if (!slices.ActiveSlice.IsAnyNodeCurrentlyActivated) {
+            sliceToFade = slices.ActiveSlice;
+            slices.MoveUp();
+            inVerticalTransition = true;
+            fadeOut = true;
+            ActivateTransition();
+            ChangedActive();
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+            //entry4.Text = slices.ActiveSlice.Path;
+        }
     }
 
     private void NewSlice(String path)
@@ -800,33 +802,40 @@ public partial class MainWindow : GameWindow
 
         Node activeNode = slices.ActiveSlice.GetActiveNode();
 
-		if (!activeNode.NodeActivated) { //Checking if node is already activated
+		if (!activeNode.NodeActivated && !slices.ActiveSlice.IsAnyNodeCurrentlyActivated) { //Checking if node is already activated
 			if (activeNode.IsDirectory) {
-				//checking if we already have this slice generated
-				if (activeNode.ChildSlice != null && activeNode.ChildSlice.Path == activeNode.File) {
-					activeNode.NodeActivated = true;
-					sliceToFade = slices.ActiveSlice;
-					slices.MoveUp ();
-					inVerticalTransition = true;
-					fadeOut = true;
-					scaleIn = true;
-					slices.ActiveSlice.ReFormat (FileSlice.BY_NAME);
-					slices.ActiveSlice.GoToNode (0); //Activate first node on that slice, not the one that was activated previously (to differentiate this operation from NavUp()
-					ChangedActive ();
-					ActivateTransition ();
-					return;
-				} else if (activeNode.ChildSlice == null) {
-					activeNode.NodeActivated = true;
-					await Task.Run (() => slices.AddChildSliceToFileNode (activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
-				}
+                //checking if we already have this slice generated
+                if (slices.ActiveSlice.LastActivatedNode == activeNode && activeNode.ChildSlice != null && activeNode.ChildSlice.NumFiles != 0) {
+                    System.Diagnostics.Debug.WriteLine("Slice for Directory: " + activeNode.File + " already generated - showing...");
+                    sliceToFade = slices.ActiveSlice;
+                    slices.MoveUp();
+                    inVerticalTransition = true;
+                    fadeOut = true;
+                    scaleIn = true;
+                    slices.ActiveSlice.ReFormat(FileSlice.BY_NAME);
+                    slices.ActiveSlice.GoToNode(0); //Activate first node on that slice, not the one that was activated previously (to differentiate this operation from NavUp()
+                    ChangedActive();
+                    ActivateTransition();
+                    return;
+                } else if (slices.ActiveSlice.LastActivatedNode != activeNode && activeNode.ChildSlice == null) {
+                    System.Diagnostics.Debug.WriteLine("Generating slice for Directory: " + activeNode.File);
+                    activeNode.NodeActivated = true;
+                    slices.ActiveSlice.IsAnyNodeCurrentlyActivated = true;
+                    await Task.Run(() => slices.AddChildSliceToFileNode(activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
+                }
 
 				if (activeNode.ChildSlice.NumFiles == 0) {
-					//glwidget1.HasFocus = true;
-					//statusbar6.Pop(0);
-					//statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
-					return;
+                    slices.ActiveSlice.LastActivatedNode = activeNode;
+                    //glwidget1.HasFocus = true;
+                    //statusbar6.Pop(0);
+                    //statusbar6.Push(0, " Not Viewing Empty Folder - " + activeNode.File);
+                    return;
 				}
-				inVerticalTransition = true;
+                System.Diagnostics.Debug.WriteLine("Showing the slice for Directory: " + activeNode.File);
+                slices.ActiveSlice.LastActivatedNode = activeNode;
+                activeNode.NodeActivated = false;
+                slices.ActiveSlice.IsAnyNodeCurrentlyActivated = false;
+                inVerticalTransition = true;
 				fadeOut = true;
 				scaleIn = true;
 				sliceToFade = slices.ActiveSlice;
@@ -918,28 +927,30 @@ public partial class MainWindow : GameWindow
 
     private void ToParent(bool clearAbove)
     {
-        inTransition = false;
+        if (!slices.ActiveSlice.IsAnyNodeCurrentlyActivated) {
+            inTransition = false;
 
-        sliceToFade = slices.ActiveSlice;
+            sliceToFade = slices.ActiveSlice;
 
-        if (clearAbove)
-        {
-            slices.MoveDownClear();
+            if (clearAbove)
+            {
+                slices.MoveDownClear();
+            }
+            else
+            {
+                slices.MoveDown();
+            }
+
+            //glwidget1.HasFocus = true;
+            fadeOut = true;
+            sliceToFade.HideAllNodes();
+            inVerticalTransition = true;
+            ChangedActive();
+            ActivateTransition();
+            //statusbar6.Pop(0);
+            //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
+            //entry4.Text = slices.ActiveSlice.Path;
         }
-        else
-        {
-            slices.MoveDown();
-        }
-
-        //glwidget1.HasFocus = true;
-        fadeOut = true;
-        sliceToFade.HideAllNodes();
-        inVerticalTransition = true;
-        ChangedActive();
-        ActivateTransition();
-        //statusbar6.Pop(0);
-        //statusbar6.Push(0, " " + slices.ActiveSlice.NumFiles + " items");
-        //entry4.Text = slices.ActiveSlice.Path;
     }
 
     protected virtual void OnHeightColourToggle(object sender, System.EventArgs e)
