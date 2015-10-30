@@ -122,11 +122,16 @@ public partial class MainWindow : GameWindow
 
     /* Constructor */
     public MainWindow()
-        : base(1024, 600, new OpenTK.Graphics.GraphicsMode(32, 24, 8, 8), "GlompVR")
-    { //MSAA (MultiSample AntiAliasing enabled - 8 samples
-        //Build();
+        : base(1024, 600, new OpenTK.Graphics.GraphicsMode(32, 24, 8, 8), "GlompVR") //MSAA (MultiSample AntiAliasing enabled - 8 samples
+    {
 
-        //System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
+        // Set the current process to run at 'High' Priority
+        System.Diagnostics.Process process = System.Diagnostics.Process.GetCurrentProcess();
+        process.PriorityClass = System.Diagnostics.ProcessPriorityClass.RealTime;
+
+        // Set the current thread to run at 'Highest' Priority
+        Thread thread = System.Threading.Thread.CurrentThread;
+        thread.Priority = ThreadPriority.Highest;
 
         //Determining number of CPU cores
         int coreCount = 0;
