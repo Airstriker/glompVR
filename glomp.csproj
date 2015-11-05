@@ -113,6 +113,8 @@
     <Compile Include="MainWindow.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Oculus\DepthBuffer.cs" />
+    <Compile Include="Oculus\OVRSharedRendertarget.cs" />
     <Compile Include="SceneNode.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="NodeManager.cs" />
