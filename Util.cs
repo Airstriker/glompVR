@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using OpenTK;
+using OculusWrap;
 
 namespace glomp
 {
@@ -79,6 +80,29 @@ namespace glomp
 			DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
 			return origin.AddSeconds(timestamp);
 		}
-	}
+
+
+        public static Quaternion ToTK(this OVR.Quaternionf quat)
+        {
+            return new Quaternion(quat.X, quat.Y, quat.Z, quat.W);
+        }
+
+        public static Vector3 ToTK(this OVR.Vector3f vec)
+        {
+            return new Vector3(vec.X, vec.Y, vec.Z);
+        }
+
+        public static Matrix4 ToTK(this OVR.Matrix4f mat)
+        {
+            Matrix4 tkMAt = new Matrix4(
+                new Vector4(mat.M11, mat.M12, mat.M13, mat.M14),
+                new Vector4(mat.M21, mat.M22, mat.M23, mat.M24),
+                new Vector4(mat.M31, mat.M32, mat.M33, mat.M34),
+                new Vector4(mat.M41, mat.M42, mat.M43, mat.M44)
+                );
+
+            return tkMAt;
+        }
+    }
 }
 

@@ -116,7 +116,7 @@ public partial class MainWindow : GameWindow
 
     bool isVisible = true;
 
-    Vector3 playerPos = new Vector3(0, 0, -10);
+    Vector3 playerPos = new Vector3(0, 0, 0);
 
     Layers layers = new Layers();
     LayerEyeFov layerFov;
@@ -124,6 +124,7 @@ public partial class MainWindow : GameWindow
     OculusWrap.GL.MirrorTexture mirrorTex;
 
     bool isOculusInitialized = false;
+    bool isOculusRenderingVisible = true;
 
     // *********************************************************************
 
@@ -245,7 +246,7 @@ public partial class MainWindow : GameWindow
         hmd.CreateMirrorTextureGL((uint)All.Rgba, this.Width, this.Height, out mirrorTex);
 
         layerFov = layers.AddLayerEyeFov();
-        layerFov.Header.Flags = OVR.LayerFlags.None; // OpenGL Texture coordinates start from bottom left
+        layerFov.Header.Flags = OVR.LayerFlags.TextureOriginAtBottomLeft; // OpenGL Texture coordinates start from bottom left
         layerFov.Header.Type = OVR.LayerType.EyeFov;
 
         //Rendertarget for mirror desktop window
@@ -308,7 +309,6 @@ public partial class MainWindow : GameWindow
 
     private void InitScene()
     {
-
         slices = new SliceManager(this);
         DirectoryNode.LoadNodeTextures(); //Drive Nodes derive the textures from Directories, so no need to initialize them
         NodeManager.LoadVBOs();
@@ -325,7 +325,6 @@ public partial class MainWindow : GameWindow
     /* MainWindow render callback */
     protected override void OnRenderFrame(FrameEventArgs e)
     {
-
         base.OnRenderFrame(e);
 
         if (!frameTimer.IsRunning)
@@ -335,7 +334,133 @@ public partial class MainWindow : GameWindow
 
         culledThisFrame = 0;
 
-        RenderScene();
+        if (isOculusInitialized)
+        {
+            //Oculus rendering
+
+            // Get eye poses, feeding in correct IPD offset
+            OVR.Vector3f[] ViewOffset = new OVR.Vector3f[]
+            {
+            EyeRenderDesc[0].HmdToEyeViewOffset,
+            EyeRenderDesc[1].HmdToEyeViewOffset
+            };
+
+            double displayMidpoint = hmd.GetPredictedDisplayTime(0);
+            OVR.TrackingState hmdState = hmd.GetTrackingState(displayMidpoint);
+            OVR.Posef[] eyePoses = new OVR.Posef[2];
+
+            wrap.CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, ref eyePoses);
+
+            if (isOculusRenderingVisible)
+            {
+                for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++)
+                {
+                    layerFov.RenderPose[eyeIndex] = eyePoses[eyeIndex];
+
+                    // Increment to use next texture, just before writing
+                    eyeRenderTexture[eyeIndex].TextureSet.CurrentIndex = (eyeRenderTexture[eyeIndex].TextureSet.CurrentIndex + 1) % eyeRenderTexture[eyeIndex].TextureSet.TextureCount;
+
+                    GL.Viewport(0, 0, eyeRenderTexture[eyeIndex].Width, eyeRenderTexture[eyeIndex].Height);
+
+                    // Set and Clear Rendertarget
+                    eyeRenderTexture[eyeIndex].Bind(eyeDepthBuffer[eyeIndex].TexId);
+
+                    //ShadersCommonProperties.viewMatrix = Matrix4.LookAt(cam.Eye, cam.Target, cam.Up);
+                    //cam.FieldOfView = (float)Math.PI / 8; //In radians
+                    //hmd.DefaultEyeFov[eyeIndex]
+
+                    // Setup Viewmatrix
+                    Quaternion rotationQuaternion = layerFov.RenderPose[eyeIndex].Orientation.ToTK();
+                    Matrix4 rotationMatrix = Matrix4.CreateFromQuaternion(rotationQuaternion);
+
+                    // I M P O R T A N T !!!! Play with this scaleMatrix to tweek HMD's Pitch, Yaw and Roll behavior. It depends on your coordinate system.
+                    //Convert to X=right, Y=up, Z=in
+                    //S = [1, 1, -1];
+                    //viewMat = viewMat * S * R * S;
+
+                    Matrix4 scaleMatrix = Matrix4.CreateScale(-1f, 1f, -1f);
+                    rotationMatrix = scaleMatrix * rotationMatrix * scaleMatrix;
+
+                    Vector3 lookUp = Vector3.Transform(Vector3.UnitY, rotationMatrix);
+                    Vector3 lookAt = Vector3.Transform(Vector3.UnitZ, rotationMatrix);
+
+                    OVR.FovPort fieldOfView = new OVR.FovPort();
+                    fieldOfView.DownTan = (float)Math.Tan(cam.FieldOfView * 0.5);
+                    fieldOfView.UpTan = (float)Math.Tan(cam.FieldOfView * 0.5);
+                    fieldOfView.LeftTan = (float)Math.Tan(cam.FieldOfView * 0.5);
+                    fieldOfView.RightTan = (float)Math.Tan(cam.FieldOfView * 0.5);
+
+                    Vector3 viewPosition = playerPos + layerFov.RenderPose[eyeIndex].Position.ToTK();
+                    ShadersCommonProperties.viewMatrix = Matrix4.LookAt(viewPosition, viewPosition + lookAt, lookUp);
+                    ShadersCommonProperties.projectionMatrix = OVR.ovrMatrix4f_Projection(hmd.DefaultEyeFov[eyeIndex], 0.1f, 500.0f, OVR.ProjectionModifier.RightHanded).ToTK();
+                    ShadersCommonProperties.projectionMatrix.Transpose();
+
+                    UpdateScene();
+
+                    GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+
+                    // Drawing SkyBox - it must be drawn first due to texture blending with nodes' textures.
+                    //skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
+
+                    // apply camera transform
+                    cam.Transform(); //model matrix is modified
+
+                    // render the nodes, just render a slice for now, it renders in order 
+                    foreach (SliceManager node in sceneList)
+                    {
+                        node.Render();
+                        this.culledThisFrame = node.culledTotal;
+                    }
+
+                    // Unbind bound shared textures
+                    eyeRenderTexture[eyeIndex].UnBind();
+                }
+            }
+
+            // Do distortion rendering, Present and flush/sync
+            OVR.ViewScaleDesc viewScale = new OVR.ViewScaleDesc()
+            {
+                HmdToEyeViewOffset = new OVR.Vector3f[]
+                {
+                ViewOffset[0],
+                ViewOffset[1]
+                },
+                HmdSpaceToWorldScaleInMeters = 1.0f
+            };
+
+            for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++)
+            {
+                // Update layer
+                layerFov.ColorTexture[eyeIndex] = eyeRenderTexture[eyeIndex].TextureSet.SwapTextureSetPtr;
+                layerFov.Viewport[eyeIndex].Position = new OVR.Vector2i(0, 0);
+                layerFov.Viewport[eyeIndex].Size = new OVR.Sizei(eyeRenderTexture[eyeIndex].Width, eyeRenderTexture[eyeIndex].Height);
+                layerFov.Fov[eyeIndex] = EyeRenderDesc[eyeIndex].Fov;
+            }
+
+            OVR.ovrResult result = hmd.SubmitFrame(0, layers);
+
+            isOculusRenderingVisible = (result == OVR.ovrResult.Success);
+
+            // Copy mirror data from mirror texture provided by OVR to backbuffer of the desktop window.
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+            int w = mirrorTex.Texture.Header.TextureSize.Width;
+            int h = mirrorTex.Texture.Header.TextureSize.Height;
+
+            GL.BlitFramebuffer(
+                0, h, w, 0,
+                0, 0, w, h,
+                ClearBufferMask.ColorBufferBit,
+                BlitFramebufferFilter.Nearest);
+
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+
+        } else
+        {
+            //Rendering without Oculus
+            RenderScene();
+        }
+        
 
         if (frameTimer.ElapsedMilliseconds > 1000)
         {
@@ -359,7 +484,6 @@ public partial class MainWindow : GameWindow
     /* My scene rendering logic */
     private void RenderScene()
     {
-
         UpdateScene();
 
         // Clearing all
