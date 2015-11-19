@@ -117,9 +117,9 @@ namespace glomp {
 			Matrix4 rotationYMatrix = Matrix4.CreateRotationY (Util.DegreesToRadians(rotY));
 			Matrix4 translationMatrix = Matrix4.CreateTranslation (translate);
 
-			//OpenTK uses row vectors (unconventional but OpenGL way??), that's why the multiplication order is as follows
-			//OpenTK matrices are transposed
-			cameraModelMatrix = translationMatrix * rotationYMatrix * rotationXMatrix;
+            //OpenTK uses row vectors (unconventional but OpenGL way??), that's why the multiplication order is as follows
+            //OpenTK matrices are transposed
+            cameraModelMatrix = translationMatrix * rotationYMatrix * rotationXMatrix;
         }
 
 		public void updateCameraParams(Mouse inputDevice, float frameDelta, MainWindow mainWindow) { //frameDelta needed for fps dependent behavior

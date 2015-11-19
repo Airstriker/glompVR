@@ -1,4 +1,5 @@
-Virtual Reality ready 3d File Manager based on glomp by sebclarke (https://github.com/sebclarke/Glomp).
+Virtual Reality 3d File Manager based on glomp by sebclarke (https://github.com/sebclarke/Glomp).
+Use Oculus Rift to enjoy Virtual Reality experience. On the other hand, it's fully operation also without Oculus.
 Opposite to original glomp, this version is Windows only.
 Compile (only!) with Visual Studio 2015 on Windows, open the .sln file in Visual Studio and away you go! Enjoy ;)
 
@@ -7,6 +8,3 @@ Needed:
 Visual C++ Redistributable Packages for Visual Studio 2013 version x86 (needed for OpenTK.Rift package to work)
 
 Author: Julian Sychowski
-
-PS. In case of Compiling/Running problems because of GTK GLWidget, please edit MainWindow.cs, make some changes (no matter what), compile once (can be with errors), revert changes and compile again. This will eliminate the mentioned problems.
-Sorry for inconveniences. Anybody knowing the reason of this issues please contact me or simply edit this README file.
