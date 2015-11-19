@@ -193,5 +193,9 @@ void main() {
    		// Add fog
    		//float fogCoord = abs(vEyeSpacePos.z/vEyeSpacePos.w); 
   		//FragColor = mix(FragColor, fogParams.vFogColor, getFogFactor(fogParams, fogCoord));
+
+		// apply gamma correction
+		//float gamma = 2.2;
+		//FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
    	}
 }

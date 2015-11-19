@@ -43,7 +43,8 @@ public partial class MainWindow : GameWindow
     private Mouse mouse;
 
     private static readonly String START_PATH = "/";
-    private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -12.0f, 32.0f);
+    private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -7.0f, 12.0f); //With Oculus 
+    //private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -12.0f, 32.0f); //Without Oculus
     private static readonly String[] ALPHABET = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
     "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
     //private static readonly float[] HIGH_COLOUR = {0.5f, 0.5f, 0.7f, 0f};
@@ -76,7 +77,8 @@ public partial class MainWindow : GameWindow
     private bool viewingDir = true;
 
     private Camera cam = new Camera();
-    private Vector3 camStartPosition = new Vector3(1.0f, 10.0f, -22.0f);
+    private Vector3 camStartPosition = new Vector3(1.0f, 5.0f, -2.0f); //With Oculus
+    //private Vector3 camStartPosition = new Vector3(1.0f, 10.0f, -22.0f); //Without Oculus
     private float camStartPitch = 15.0f;
     private float camStartYaw = 5.0f;
     private FileSlice sliceToFade;
@@ -206,72 +208,6 @@ public partial class MainWindow : GameWindow
     }
 
 
-    private bool InitOculus()
-    {
-        // Initialize the Oculus runtime.
-        bool success = wrap.Initialize();
-        if (!success)
-        {
-            //MessageBox.Show("Failed to initialize the Oculus runtime library.", "Uh oh", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            System.Diagnostics.Debug.WriteLine("Failed to initialize the Oculus runtime library.");
-            return false;
-        }
-
-        // Use the head mounted display.
-        OVR.GraphicsLuid graphicsLuid;
-        hmd = wrap.Hmd_Create(out graphicsLuid);
-        if (hmd == null)
-        {
-            //MessageBox.Show("Oculus Rift not detected.", "Uh oh", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            System.Diagnostics.Debug.WriteLine("Oculus Rift not detected.");
-            return false;
-        }
-
-        if (hmd.ProductName == string.Empty)
-        {
-            //MessageBox.Show("The HMD is not enabled.", "There's a tear in the Rift", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            System.Diagnostics.Debug.WriteLine("The HMD is not enabled.");
-            return false;
-        }
-
-        System.Diagnostics.Debug.WriteLine("Oculus SDK Version: " + wrap.GetVersionString());
-
-        for (int i = 0; i < 2; i++)
-        {
-            OVR.Sizei idealTextureSize = hmd.GetFovTextureSize((OVR.EyeType)i, hmd.DefaultEyeFov[i], 1);
-            eyeRenderTexture[i] = new OvrSharedRendertarget(idealTextureSize.Width, idealTextureSize.Height, hmd);
-            eyeDepthBuffer[i] = new DepthBuffer(eyeRenderTexture[i].Width, eyeRenderTexture[i].Height);
-        }
-
-        hmd.CreateMirrorTextureGL((uint)All.Rgba, this.Width, this.Height, out mirrorTex);
-
-        layerFov = layers.AddLayerEyeFov();
-        layerFov.Header.Flags = OVR.LayerFlags.TextureOriginAtBottomLeft; // OpenGL Texture coordinates start from bottom left
-        layerFov.Header.Type = OVR.LayerType.EyeFov;
-
-        //Rendertarget for mirror desktop window
-        GL.GenFramebuffers(1, out mirrorFbo);
-        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
-        GL.FramebufferTexture2D(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, mirrorTex.Texture.TexId, 0);
-        GL.FramebufferRenderbuffer(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, 0);
-        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
-
-        EyeRenderDesc[0] = hmd.GetRenderDesc(OVR.EyeType.Left, hmd.DefaultEyeFov[0]);
-        EyeRenderDesc[1] = hmd.GetRenderDesc(OVR.EyeType.Right, hmd.DefaultEyeFov[1]);
-
-        // Specify which head tracking capabilities to enable.
-        hmd.SetEnabledCaps(OVR.HmdCaps.DebugDevice);
-
-        // Start the sensor
-        //Update SDK 0.8: Usage of ovr_ConfigureTracking is no longer needed unless you want to disable tracking features. By default, ovr_Create enables the full tracking capabilities supported by any given device.
-        //hmd.ConfigureTracking(OVR.TrackingCaps.ovrTrackingCap_Orientation | OVR.TrackingCaps.ovrTrackingCap_MagYawCorrection | OVR.TrackingCaps.ovrTrackingCap_Position, OVR.TrackingCaps.None);
-
-        hmd.RecenterPose();
-
-        return true;
-    }
-
-
     /* Init OpenGL*/
     private void InitGL()
     {
@@ -322,6 +258,72 @@ public partial class MainWindow : GameWindow
     }
 
 
+    private bool InitOculus()
+    {
+        // Initialize the Oculus runtime.
+        bool success = wrap.Initialize();
+        if (!success)
+        {
+            //MessageBox.Show("Failed to initialize the Oculus runtime library.", "Uh oh", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            System.Diagnostics.Debug.WriteLine("Failed to initialize the Oculus runtime library.");
+            return false;
+        }
+
+        // Use the head mounted display.
+        OVR.GraphicsLuid graphicsLuid;
+        hmd = wrap.Hmd_Create(out graphicsLuid);
+        if (hmd == null)
+        {
+            //MessageBox.Show("Oculus Rift not detected.", "Uh oh", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            System.Diagnostics.Debug.WriteLine("Oculus Rift not detected.");
+            return false;
+        }
+
+        if (hmd.ProductName == string.Empty)
+        {
+            //MessageBox.Show("The HMD is not enabled.", "There's a tear in the Rift", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            System.Diagnostics.Debug.WriteLine("The HMD is not enabled.");
+            return false;
+        }
+
+        System.Diagnostics.Debug.WriteLine("Oculus SDK Version: " + wrap.GetVersionString());
+
+        for (int i = 0; i < 2; i++)
+        {
+            OVR.Sizei idealTextureSize = hmd.GetFovTextureSize((OVR.EyeType)i, hmd.DefaultEyeFov[i], 1);
+            eyeRenderTexture[i] = new OvrSharedRendertarget(idealTextureSize.Width, idealTextureSize.Height, hmd);
+            eyeDepthBuffer[i] = new DepthBuffer(eyeRenderTexture[i].Width, eyeRenderTexture[i].Height);
+        }
+
+        hmd.CreateMirrorTextureGL((uint)All.Srgb8Alpha8, this.Width, this.Height, out mirrorTex);
+
+        layerFov = layers.AddLayerEyeFov();
+        layerFov.Header.Flags = OVR.LayerFlags.TextureOriginAtBottomLeft; // OpenGL Texture coordinates start from bottom left
+        layerFov.Header.Type = OVR.LayerType.EyeFov;
+
+        //Rendertarget for mirror desktop window
+        GL.GenFramebuffers(1, out mirrorFbo);
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
+        GL.FramebufferTexture2D(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, mirrorTex.Texture.TexId, 0);
+        GL.FramebufferRenderbuffer(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, 0);
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+
+        EyeRenderDesc[0] = hmd.GetRenderDesc(OVR.EyeType.Left, hmd.DefaultEyeFov[0]);
+        EyeRenderDesc[1] = hmd.GetRenderDesc(OVR.EyeType.Right, hmd.DefaultEyeFov[1]);
+
+        // Specify which head tracking capabilities to enable.
+        hmd.SetEnabledCaps(OVR.HmdCaps.DebugDevice);
+
+        // Start the sensor
+        //Update SDK 0.8: Usage of ovr_ConfigureTracking is no longer needed unless you want to disable tracking features. By default, ovr_Create enables the full tracking capabilities supported by any given device.
+        //hmd.ConfigureTracking(OVR.TrackingCaps.ovrTrackingCap_Orientation | OVR.TrackingCaps.ovrTrackingCap_MagYawCorrection | OVR.TrackingCaps.ovrTrackingCap_Position, OVR.TrackingCaps.None);
+
+        hmd.RecenterPose();
+
+        return true;
+    }
+
+
     /* MainWindow render callback */
     protected override void OnRenderFrame(FrameEventArgs e)
     {
@@ -341,12 +343,14 @@ public partial class MainWindow : GameWindow
             // Get eye poses, feeding in correct IPD offset
             OVR.Vector3f[] ViewOffset = new OVR.Vector3f[]
             {
-            EyeRenderDesc[0].HmdToEyeViewOffset,
-            EyeRenderDesc[1].HmdToEyeViewOffset
+                EyeRenderDesc[0].HmdToEyeViewOffset,
+                EyeRenderDesc[1].HmdToEyeViewOffset
             };
 
-            double displayMidpoint = hmd.GetPredictedDisplayTime(0);
-            OVR.TrackingState hmdState = hmd.GetTrackingState(displayMidpoint);
+            double ftiming = hmd.GetPredictedDisplayTime(0);
+            // Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
+            double sensorSampleTime = wrap.GetTimeInSeconds();
+            OVR.TrackingState hmdState = hmd.GetTrackingState(ftiming);
             OVR.Posef[] eyePoses = new OVR.Posef[2];
 
             wrap.CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, ref eyePoses);
@@ -384,12 +388,6 @@ public partial class MainWindow : GameWindow
                     Vector3 lookUp = Vector3.Transform(Vector3.UnitY, rotationMatrix);
                     Vector3 lookAt = Vector3.Transform(Vector3.UnitZ, rotationMatrix);
 
-                    OVR.FovPort fieldOfView = new OVR.FovPort();
-                    fieldOfView.DownTan = (float)Math.Tan(cam.FieldOfView * 0.5);
-                    fieldOfView.UpTan = (float)Math.Tan(cam.FieldOfView * 0.5);
-                    fieldOfView.LeftTan = (float)Math.Tan(cam.FieldOfView * 0.5);
-                    fieldOfView.RightTan = (float)Math.Tan(cam.FieldOfView * 0.5);
-
                     Vector3 viewPosition = playerPos + layerFov.RenderPose[eyeIndex].Position.ToTK();
                     ShadersCommonProperties.viewMatrix = Matrix4.LookAt(viewPosition, viewPosition + lookAt, lookUp);
                     ShadersCommonProperties.projectionMatrix = OVR.ovrMatrix4f_Projection(hmd.DefaultEyeFov[eyeIndex], 0.1f, 500.0f, OVR.ProjectionModifier.RightHanded).ToTK();
@@ -397,10 +395,10 @@ public partial class MainWindow : GameWindow
 
                     UpdateScene();
 
-                    GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+                    GL.Clear(ClearBufferMask.DepthBufferBit);
 
                     // Drawing SkyBox - it must be drawn first due to texture blending with nodes' textures.
-                    //skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
+                    skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
 
                     // apply camera transform
                     cam.Transform(); //model matrix is modified
@@ -434,7 +432,9 @@ public partial class MainWindow : GameWindow
                 layerFov.ColorTexture[eyeIndex] = eyeRenderTexture[eyeIndex].TextureSet.SwapTextureSetPtr;
                 layerFov.Viewport[eyeIndex].Position = new OVR.Vector2i(0, 0);
                 layerFov.Viewport[eyeIndex].Size = new OVR.Sizei(eyeRenderTexture[eyeIndex].Width, eyeRenderTexture[eyeIndex].Height);
-                layerFov.Fov[eyeIndex] = EyeRenderDesc[eyeIndex].Fov;
+                layerFov.Fov[eyeIndex] = hmd.DefaultEyeFov[eyeIndex];
+                layerFov.RenderPose[eyeIndex] = eyePoses[eyeIndex];
+                layerFov.SensorSampleTime = sensorSampleTime;
             }
 
             OVR.ovrResult result = hmd.SubmitFrame(0, layers);
@@ -454,7 +454,6 @@ public partial class MainWindow : GameWindow
                 BlitFramebufferFilter.Nearest);
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
-
         } else
         {
             //Rendering without Oculus

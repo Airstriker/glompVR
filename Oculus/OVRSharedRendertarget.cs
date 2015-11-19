@@ -17,7 +17,7 @@ namespace glomp
             width = w;
             height = h;
 
-            hmd.CreateSwapTextureSetGL((uint)All.Rgba, width, height, out textureSet);
+            hmd.CreateSwapTextureSetGL((uint)All.Srgb8Alpha8, width, height, out textureSet);
 
             for (int i = 0; i < textureSet.TextureCount; i++)
             {
