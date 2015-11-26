@@ -1,5 +1,5 @@
 #region --- License ---
-/* Copyright (c) 2014 Julian Sychowski
+/* Copyright (c) 2015 Julian Sychowski
  * See license.txt for license info
  */
 #endregion
@@ -43,8 +43,6 @@ public partial class MainWindow : GameWindow
     private Mouse mouse;
 
     private static readonly String START_PATH = "/";
-    private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -7.0f, 12.0f); //With Oculus 
-    //private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -12.0f, 32.0f); //Without Oculus
     private static readonly String[] ALPHABET = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
     "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
     //private static readonly float[] HIGH_COLOUR = {0.5f, 0.5f, 0.7f, 0f};
@@ -77,8 +75,10 @@ public partial class MainWindow : GameWindow
     private bool viewingDir = true;
 
     private Camera cam = new Camera();
-    private Vector3 camStartPosition = new Vector3(1.0f, 5.0f, -2.0f); //With Oculus
-    //private Vector3 camStartPosition = new Vector3(1.0f, 10.0f, -22.0f); //Without Oculus
+    //private Vector3 camStartPosition = new Vector3(1.0f, 5.0f, -2.0f); //With Oculus
+    private Vector3 camStartPosition = new Vector3(1.0f, 10.0f, -22.0f); //Without Oculus
+    //private static readonly Vector3 CAM_OFFSET = new Vector3(5.0f, -7.0f, 12.0f); //With Oculus 
+    private Vector3 CAM_OFFSET = new Vector3(5.0f, -12.0f, 32.0f); //Without Oculus
     private float camStartPitch = 15.0f;
     private float camStartYaw = 5.0f;
     private FileSlice sliceToFade;
@@ -294,6 +294,10 @@ public partial class MainWindow : GameWindow
             eyeRenderTexture[i] = new OvrSharedRendertarget(idealTextureSize.Width, idealTextureSize.Height, hmd);
             eyeDepthBuffer[i] = new DepthBuffer(eyeRenderTexture[i].Width, eyeRenderTexture[i].Height);
         }
+
+        //Changing camera's start position and camera's offset, as in Oculus we're dealing with different FOV (different projection matrix).
+        camStartPosition = new Vector3(1.0f, 5.0f, -2.0f);
+        CAM_OFFSET = new Vector3(5.0f, -7.0f, 12.0f);
 
         hmd.CreateMirrorTextureGL((uint)All.Srgb8Alpha8, this.Width, this.Height, out mirrorTex);
 
