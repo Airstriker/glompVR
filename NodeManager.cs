@@ -23,16 +23,28 @@ namespace glomp
 			Shape dirNodeShape = new DirNodeShape();
 			Shape driveNodeShape = new DriveNodeShape();
 			vbo[(int)Node.NodeType.FILE_NODE] = VBOUtil.LoadVBO(fileNodeShape);
-			VBOUtil.ConfigureVertexArrayObject(out vao [(int)Node.NodeType.FILE_NODE], vbo [(int)Node.NodeType.FILE_NODE]);
+			VBOUtil.ConfigureVertexArrayObject(out vao[(int)Node.NodeType.FILE_NODE], vbo[(int)Node.NodeType.FILE_NODE]);
 			vbo[(int)Node.NodeType.DIR_NODE] = VBOUtil.LoadVBO(dirNodeShape);
-			VBOUtil.ConfigureVertexArrayObject(out vao [(int)Node.NodeType.DIR_NODE], vbo [(int)Node.NodeType.DIR_NODE]);
+			VBOUtil.ConfigureVertexArrayObject(out vao[(int)Node.NodeType.DIR_NODE], vbo[(int)Node.NodeType.DIR_NODE]);
 			vbo[(int)Node.NodeType.DRIVE_NODE] = VBOUtil.LoadVBO(driveNodeShape);
-			VBOUtil.ConfigureVertexArrayObject(out vao [(int)Node.NodeType.DRIVE_NODE], vbo [(int)Node.NodeType.DRIVE_NODE]);
+			VBOUtil.ConfigureVertexArrayObject(out vao[(int)Node.NodeType.DRIVE_NODE], vbo[(int)Node.NodeType.DRIVE_NODE]);
 
 			Shape labelShape = new LabelShape();
 			labelVbo = VBOUtil.LoadVBO(labelShape);
 			VBOUtil.ConfigureVertexArrayObjectForLabels(out labelVao, labelVbo);
 		}
+
+        public static void DisposeVBOs() {
+            //Delete buffers related to VBOs
+            vbo[(int)Node.NodeType.FILE_NODE].Dispose();
+            vbo[(int)Node.NodeType.DIR_NODE].Dispose();
+            vbo[(int)Node.NodeType.DRIVE_NODE].Dispose();
+            labelVbo.Dispose();
+
+            if (vao[(int)Node.NodeType.FILE_NODE] != 0) GL.DeleteVertexArray(vao[(int)Node.NodeType.FILE_NODE]);
+            if (vao[(int)Node.NodeType.DIR_NODE] != 0) GL.DeleteVertexArray(vao[(int)Node.NodeType.DIR_NODE]);
+            if (vao[(int)Node.NodeType.DRIVE_NODE] != 0) GL.DeleteVertexArray(vao[(int)Node.NodeType.DRIVE_NODE]);
+        }
 
     }
 }

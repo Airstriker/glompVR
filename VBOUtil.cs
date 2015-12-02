@@ -6,12 +6,18 @@ namespace glomp
 {
 	public class VBOUtil
 	{
-		public struct Vbo
+		public class Vbo
 		{
-			public int VertexBufferID;
-			public int ElementBufferID;
-			public int NumElements;
-		}
+			public int VertexBufferID { get; set; }
+            public int ElementBufferID { get; set; }
+            public int NumElements { get; set; }
+
+            public void Dispose()
+            {
+                if (VertexBufferID != 0) GL.DeleteBuffer(VertexBufferID);
+                if (ElementBufferID != 0) GL.DeleteBuffer(ElementBufferID);
+            }
+        }
 
 		private static int previouslyUsedVao = -1;
 
@@ -33,11 +39,13 @@ namespace glomp
 				return vbo;
 				
 			{
-				// Generate Array Buffer Id
-				GL.GenBuffers (1, out vbo.VertexBufferID);
+                // Generate Array Buffer Id
+                int vertexBufferID;
+                GL.GenBuffers (1, out vertexBufferID);
+                vbo.VertexBufferID = vertexBufferID;
 
-				// Bind current context to Array Buffer ID
-				GL.BindBuffer (BufferTarget.ArrayBuffer, vbo.VertexBufferID);
+                // Bind current context to Array Buffer ID
+                GL.BindBuffer (BufferTarget.ArrayBuffer, vbo.VertexBufferID);
 
 				// Send data to buffer
 				GL.BufferData (BufferTarget.ArrayBuffer, (IntPtr)(shape.VertexData.Length * sizeof(float)), shape.VertexData, BufferUsageHint.StaticDraw);
@@ -48,11 +56,13 @@ namespace glomp
 
 			// Element Array Buffer
 			{
-				// Generate Array Buffer Id
-				GL.GenBuffers (1, out vbo.ElementBufferID);
+                // Generate Array Buffer Id
+                int elementBufferID;
+                GL.GenBuffers (1, out elementBufferID);
+                vbo.ElementBufferID = elementBufferID;
 
-				// Bind current context to Array Buffer ID
-				GL.BindBuffer (BufferTarget.ElementArrayBuffer, vbo.ElementBufferID);
+                // Bind current context to Array Buffer ID
+                GL.BindBuffer (BufferTarget.ElementArrayBuffer, vbo.ElementBufferID);
 
 				// Send data to buffer
 				GL.BufferData (BufferTarget.ElementArrayBuffer, (IntPtr)(shape.Indices.Length * sizeof(int)), shape.Indices, BufferUsageHint.StaticDraw);

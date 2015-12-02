@@ -713,21 +713,37 @@ public partial class MainWindow : GameWindow
         InitOrUpdateProjectionMatrix();
     }
 
+
     //Called after GameWindow.Exit was called, but before destroying the OpenGL context. Called before OnClosing().
     protected override void OnUnload(EventArgs e)
     {
+        // Release all resources
         // Deleting buffers, rendertargets, dispose...
         if (eyeRenderTexture[0] != null) eyeRenderTexture[0].CleanUp();
         if (eyeRenderTexture[1] != null) eyeRenderTexture[1].CleanUp();
 
-        GL.DeleteFramebuffers(1, ref mirrorFbo);
+        if (mirrorFbo != 0) GL.DeleteFramebuffers(1, ref mirrorFbo);
+        Dispose(mirrorTex);
 
-        if (hmd != null) hmd.Dispose();
-        if (wrap != null) wrap.Dispose();
-        if (layers != null) layers.Dispose();
+        NodeManager.DisposeVBOs(); //Delete Buffers and Arrays
+
+        Dispose(layers);
+
+        // Disposing the device, before the hmd, will cause the hmd to fail when disposing.
+        // Disposing the device, after the hmd, will cause the dispose of the device to fail.
+        // It looks as if the hmd steals ownership of the device and destroys it, when it's shutting down.
+        // device.Dispose();
+        Dispose(hmd);
+        Dispose(wrap);
+
+        //Dispose Shaders' Programs
+        LabelShader.Instance.Dispose();
+        NodeShader.Instance.Dispose();
+        SkyBoxShader.Instance.Dispose();
 
         base.OnUnload(e);
     }
+
 
     //Called when the NativeWindow is about to close.
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -742,6 +758,18 @@ public partial class MainWindow : GameWindow
         current.MakeCurrent(null);
         current.Dispose();
     }
+
+
+    /// <summary>
+    /// Dispose the specified object, unless it's a null object.
+    /// </summary>
+    /// <param name="disposable">Object to dispose.</param>
+    public static void Dispose(IDisposable disposable)
+    {
+        if (disposable != null)
+            disposable.Dispose();
+    }
+
 
     /*
     protected virtual void OnFindLoseFocus (object o, Gtk.FocusOutEventArgs args) {
