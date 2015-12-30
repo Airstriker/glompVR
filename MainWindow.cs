@@ -416,6 +416,19 @@ public partial class MainWindow : GameWindow
 
                     // Unbind bound shared textures
                     eyeRenderTexture[eyeIndex].UnBind();
+
+                    frameDelta = (frameTimer.ElapsedTicks - currentTicks) / 10000000.0f;
+                    currentTicks = frameTimer.ElapsedTicks;
+                }
+
+                //We count frames only after two eye views are rendered
+                if (frameTimer.ElapsedMilliseconds > 1000)
+                {
+                    this.Title = "GLompVR by Airstriker. " + frameCounter + "fps. ActiveSlice Path: " + slices.ActiveSlice.Path + " Number of nodes on ActiveSlice: " + slices.ActiveSlice.NumFiles + ". Culled: " + culledThisFrame + " nodes.";
+                    frameCounter = 0;
+                    currentTicks = 0;
+                    frameTimer.Reset();
+                    frameTimer.Start();
                 }
             }
 
@@ -458,25 +471,26 @@ public partial class MainWindow : GameWindow
                 BlitFramebufferFilter.Nearest);
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
-        } else
+        }
+
+        else
         {
             //Rendering without Oculus
             RenderScene();
-        }
-        
 
-        if (frameTimer.ElapsedMilliseconds > 1000)
-        {
-            this.Title = "GLompVR by Airstriker. " + frameCounter + "fps. ActiveSlice Path: " + slices.ActiveSlice.Path + " Number of nodes on ActiveSlice: " + slices.ActiveSlice.NumFiles + ". Culled: " + culledThisFrame + " nodes.";
-            frameCounter = 0;
-            currentTicks = 0;
-            frameTimer.Reset();
-            frameTimer.Start();
-        }
-        else
-        {
-            frameDelta = (frameTimer.ElapsedTicks - currentTicks) / 10000000.0f;
-            currentTicks = frameTimer.ElapsedTicks;
+            if (frameTimer.ElapsedMilliseconds > 1000)
+            {
+                this.Title = "GLompVR by Airstriker. " + frameCounter + "fps. ActiveSlice Path: " + slices.ActiveSlice.Path + " Number of nodes on ActiveSlice: " + slices.ActiveSlice.NumFiles + ". Culled: " + culledThisFrame + " nodes.";
+                frameCounter = 0;
+                currentTicks = 0;
+                frameTimer.Reset();
+                frameTimer.Start();
+            }
+            else
+            {
+                frameDelta = (frameTimer.ElapsedTicks - currentTicks) / 10000000.0f;
+                currentTicks = frameTimer.ElapsedTicks;
+            }
         }
 
         frameCounter++;
