@@ -238,7 +238,7 @@ namespace glomp {
 			Util.MatrixToFloatArray(modelViewMatrix, ref modelView);
 			Util.MatrixToFloatArray(ShadersCommonProperties.projectionMatrix, ref proj);
 
-            culler.CalculateFrustum(modelView, proj); //TODO: correct culler
+            culler.CalculateFrustum(modelView, proj);
             
             foreach(FileSlice slice in slices) {
                 slice.Render(culler);

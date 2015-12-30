@@ -4,8 +4,8 @@ namespace glomp
 {
 	public class DirNodeShape : Shape
 	{
-		private static readonly float BOX_SCALE = 0.8f;
-		private static readonly float dirHeight = 1.04f;
+		public static readonly float BOX_SCALE = 0.8f;
+		public static readonly float dirHeight = 1.04f;
 
 		//Arrays filling constructor (DirNode shape definition loading)
 		public DirNodeShape()

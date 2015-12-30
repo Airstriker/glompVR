@@ -550,10 +550,19 @@ namespace glomp {
                 Node.SetBoxState(isDimmed);
                 for(int i = fileNodes.Length-1; i >= 0; i--) {
                     float nodeZ = sliceZ + fileNodes[i].Position.Z;
-					float nodeX = sliceX + fileNodes [i].Position.X - 2.1f;
+					float nodeX = sliceX + fileNodes[i].Position.X;
                     float nodeY = sliceY + fileNodes[i].Position.Y;
-					if( /*(nodeZ > parentWindow.GetCamera().Position.Z) && */ //If you don't want to show all the boxes that are behind you - uncomment this line; For VR we need every box to be visible
-                       (culler.isBoxVisible(nodeX, nodeY, nodeZ, 3f, 8f)) ) { //TODO: correct culler
+
+                    float boxRadius = (fileNodes[i].IsDirectory ? DirNodeShape.BOX_SCALE :
+                                        fileNodes[i].IsDrive ? DriveNodeShape.BOX_SCALE :
+                                            FileNodeShape.BOX_SCALE);
+
+                    float boxHeight = (fileNodes[i].IsDirectory ? ((DirectoryNode)fileNodes[i]).DirHeight * (DirNodeShape.BOX_SCALE + DirNodeShape.dirHeight) :
+                                        fileNodes[i].IsDrive ? ((DriveNode)fileNodes[i]).DirHeight * (DriveNodeShape.BOX_SCALE + DriveNodeShape.dirHeight) :
+                                            FileNodeShape.BOX_SCALE * 2);
+
+                    if ( /*(nodeZ > parentWindow.GetCamera().Position.Z) && */ //If you don't want to show all the boxes that are behind you - uncomment this line; For VR we need every box to be visible
+                       (culler.isBoxVisible(nodeX, nodeY, nodeZ, boxRadius, boxHeight)) ) {
                         
                         fileNodes[i].culled = false;
 						fileNodes[i].DrawBox(i, parentWindow.FrameDelta);	//the main boxes drawing method

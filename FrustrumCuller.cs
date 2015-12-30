@@ -1,4 +1,5 @@
 using System;
+using OpenTK;
 // courtesy of Iain Craig, AF3DE
 
 
@@ -30,11 +31,18 @@ namespace glomp {
             // this plane.
             return a * x + b * y + c * z + d;
         }
+
+        public Vector3 GetNormal()
+        {
+            return new Vector3(a, b, c);
+        }
     }
 
     public class FrustumCuller
     {
         FrustumCullerPlane[] Frustum;
+
+        private enum Result { OUTSIDE, INTERSECT, INSIDE };
 
         public FrustumCuller()
         {
@@ -182,10 +190,13 @@ namespace glomp {
             minX = x - baseRadius; maxX = x + baseRadius;
             minY = y; maxY = y + height;
             minZ = z - baseRadius; maxZ = z + baseRadius;
-               
+
             // Loop through each side of the frustum and test if the box lies outside any of them.
-            for(int i = 0; i < 6; i++)
+            /*
+            //OLD METHOD - theoretically slower
+            for (int i = 0; i < 6; i++)
                 {
+                    //Check every box's corner (8)
                     if(Frustum[i].GetDistance(minX, minY, minZ) > 0) continue;
                     if(Frustum[i].GetDistance(maxX, minY, minZ) > 0) continue;   
                     if(Frustum[i].GetDistance(minX, maxY, minZ) > 0) continue;   
@@ -199,6 +210,55 @@ namespace glomp {
                 }
 
             return true;
+            */
+
+            //FASTER METHOD - check http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
+            //Box testing can be optimized, up to a certain extent, by testing only two of its vertices, namely the “positive vertex” and the “negative vertex” (aka the maximum vertex and the minimum vertex).
+            //Testing a single vertex is enough for the cases where the box is outside, and the second vertex needs only to be tested if one requires distinguishing between boxes totally inside and boxes partially inside the view frustum.
+            //So what are these vertices? And how hard is it to find them?
+            //Consider a plane and its normal.The positive vertex is the vertex from the box that is further along the normal’s direction. The negative vertex is the opposite vertex
+            //If the p-vertex is on the wrong side of the plane, the box can be immediately rejected, as it falls completely outside the frustum. On the other hand, if the p-vertex is on the right side of the plane, then testing the whereabouts of the n-vertex tells if the box is totally on the right side of the plane, or if the box intersects the plane.
+            Result result = Result.INSIDE;
+            //for each plane do ...
+            for (int i = 0; i < 6; i++)
+            {
+                //getting vertex p...
+                Vector3 vertexP = new Vector3(minX, minY, minZ);
+                Vector3 planeNormal = Frustum[i].GetNormal();
+                if (planeNormal.X >= 0)
+                    vertexP.X = maxX;
+                if (planeNormal.Y >= 0)
+		            vertexP.Y = maxY;
+                if (planeNormal.Z >= 0)
+                    vertexP.Z = maxZ;
+
+                // is the positive vertex outside?
+                if (Frustum[i].GetDistance(vertexP.X, vertexP.Y, vertexP.Z) < -0.67f) //Note that due to the limited precision of numbers in computers something that is slightly outside of frustum may be reported as inside, and vice-versa - that's why we don't compare exactly to 0.
+                {
+                    result = Result.OUTSIDE;
+                    break;
+                }
+
+                //BELOW IS OPTIONAL - Testing a single vertex (vertexP) is enough for the cases where the box is outside, and the second vertex needs only to be tested if one requires distinguishing between boxes totally inside and boxes partially inside the view frustum.
+                /*
+                Vector3 vertexN = new Vector3(maxX, maxY, maxZ);
+                if (planeNormal.X >= 0)
+                    vertexN.X = minX;
+                if (planeNormal.Y >= 0)
+                    vertexN.Y = minY;
+                if (planeNormal.Z >= 0)
+                    vertexN.Z = minZ;
+
+                // is the negative vertex outside?
+                else if (Frustum[i].GetDistance(vertexN.X, vertexN.Y, vertexN.Z) < 0)
+                    result = Result.INTERSECT;
+                */
+            }
+
+            if (result == Result.INSIDE || result == Result.INTERSECT)
+                return true;
+            else
+                return false;
         }
     }
 }

@@ -4,7 +4,7 @@ namespace glomp
 {
 	public class FileNodeShape : Shape
 	{
-		private static readonly float BOX_SCALE = 0.8f;
+		public static readonly float BOX_SCALE = 0.8f;
 
 		//Arrays filling constructor (FileNode shape definition loading)
 		public FileNodeShape()
