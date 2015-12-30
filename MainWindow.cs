@@ -392,7 +392,13 @@ public partial class MainWindow : GameWindow
                     Vector3 lookUp = Vector3.Transform(Vector3.UnitY, rotationMatrix);
                     Vector3 lookAt = Vector3.Transform(Vector3.UnitZ, rotationMatrix);
 
-                    Vector3 viewPosition = playerPos - layerFov.RenderPose[eyeIndex].Position.ToTK(); //If head tracking is reversed - change minus to plus.
+                    Vector3 viewPosition = playerPos;
+                    
+                    //NOTE! If head tracking is reversed at any axis - change minus to plus.
+                    viewPosition.X -= layerFov.RenderPose[eyeIndex].Position.ToTK().X;
+                    viewPosition.Y += layerFov.RenderPose[eyeIndex].Position.ToTK().Y;
+                    viewPosition.Z -= layerFov.RenderPose[eyeIndex].Position.ToTK().Z;
+
                     ShadersCommonProperties.viewMatrix = Matrix4.LookAt(viewPosition, viewPosition + lookAt, lookUp);
                     ShadersCommonProperties.projectionMatrix = OVR.ovrMatrix4f_Projection(hmd.DefaultEyeFov[eyeIndex], 0.1f, 500.0f, OVR.ProjectionModifier.RightHanded).ToTK();
                     ShadersCommonProperties.projectionMatrix.Transpose();
