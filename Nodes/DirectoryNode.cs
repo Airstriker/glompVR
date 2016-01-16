@@ -11,14 +11,14 @@ namespace glomp
 		//Constants
 		/*  Directory Nodes Textures  */
 		private static readonly String[] dirNodeTextures = {
-			"..\\..\\resources\\towers2-1.png",
-			"..\\..\\resources\\towers2-2.png",
-			"..\\..\\resources\\towers2-3.png",
-			"..\\..\\resources\\towers2-4.png",
-			"..\\..\\resources\\towers2-5.png",
-			"..\\..\\resources\\towers2-6.png",
-			"..\\..\\resources\\towers2-7.png",
-			"..\\..\\resources\\towers2-8.png"
+			"..\\..\\resources\\towers2-1.dds",
+			"..\\..\\resources\\towers2-2.dds",
+			"..\\..\\resources\\towers2-3.dds",
+			"..\\..\\resources\\towers2-4.dds",
+			"..\\..\\resources\\towers2-5.dds",
+			"..\\..\\resources\\towers2-6.dds",
+			"..\\..\\resources\\towers2-7.dds",
+			"..\\..\\resources\\towers2-8.dds"
 		};
 
 		//Static variables
@@ -78,7 +78,7 @@ namespace glomp
                 TextureTarget textureTarget;
                 TextureLoaderParameters.MagnificationFilter = TextureMagFilter.Linear;
                 TextureLoaderParameters.MinificationFilter = TextureMinFilter.LinearMipmapLinear;
-                ImageGDI.LoadFromDisk(texture, out nodeTextures[i], out textureTarget);
+                ImageDDS.LoadFromDisk(texture, out nodeTextures[i], out textureTarget);
                 System.Diagnostics.Debug.WriteLine("Loaded " + texture + " with handle " + nodeTextures[i] + " as " + textureTarget);
                 i++;
 			}
