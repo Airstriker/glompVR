@@ -23,14 +23,14 @@ namespace glomp
 {
     class ImageGDI
     {
-        public static void LoadFromDisk(string filename, out uint texturehandle, out OpenTK.Graphics.OpenGL.TextureTarget dimension)
+        public static void LoadFromDisk(string filename, out uint texturehandle, out OpenTK.Graphics.OpenGL.TextureTarget dimension, bool compressOnTheFly, OpenTK.Graphics.OpenGL.PixelInternalFormat internalFormatForOnTheFlyCompression)
         {
             Bitmap CurrentBitmap = null;
 
             try // Exceptions will be thrown if any Problem occurs while working on the file. 
             {
                 CurrentBitmap = new Bitmap( filename );
-                LoadFromDisk(CurrentBitmap, out texturehandle, out dimension);
+                LoadFromDisk(CurrentBitmap, out texturehandle, out dimension, compressOnTheFly, internalFormatForOnTheFlyCompression);
             } catch ( Exception e )
             {
                 dimension = (OpenTK.Graphics.OpenGL.TextureTarget)0;
@@ -43,7 +43,7 @@ namespace glomp
         }
 
 
-        public static void LoadFromDisk(System.Drawing.Bitmap CurrentBitmap, out uint texturehandle, out OpenTK.Graphics.OpenGL.TextureTarget dimension)
+        public static void LoadFromDisk(System.Drawing.Bitmap CurrentBitmap, out uint texturehandle, out OpenTK.Graphics.OpenGL.TextureTarget dimension, bool compressOnTheFly, OpenTK.Graphics.OpenGL.PixelInternalFormat internalFormatForOnTheFlyCompression)
         {
             dimension = (TextureTarget)0;
             texturehandle = TextureLoaderParameters.OpenGLDefaultTexture;
@@ -73,28 +73,52 @@ namespace glomp
                         pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgb8;
                         pf = OpenTK.Graphics.OpenGL.PixelFormat.ColorIndex;
                         pt = OpenTK.Graphics.OpenGL.PixelType.Bitmap;
+                        compressOnTheFly = false; //not supported
                         break;
                     case System.Drawing.Imaging.PixelFormat.Format16bppArgb1555:
                     case System.Drawing.Imaging.PixelFormat.Format16bppRgb555: // does not work
                         pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgb5A1;
                         pf = OpenTK.Graphics.OpenGL.PixelFormat.Bgr;
                         pt = OpenTK.Graphics.OpenGL.PixelType.UnsignedShort5551Ext;
+                        compressOnTheFly = false; //not supported
                         break;
                     /*  case System.Drawing.Imaging.PixelFormat.Format16bppRgb565:
                           pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.R5G6B5IccSgix;
                           pf = OpenTK.Graphics.OpenGL.PixelFormat.R5G6B5IccSgix;
                           pt = OpenTK.Graphics.OpenGL.PixelType.UnsignedByte;
+                          compressOnTheFly = false; //not supported
                           break;
-      */
+                    */
                     case System.Drawing.Imaging.PixelFormat.Format24bppRgb: // works
                         pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgb8;
                         pf = OpenTK.Graphics.OpenGL.PixelFormat.Bgr;
                         pt = OpenTK.Graphics.OpenGL.PixelType.UnsignedByte;
+                        compressOnTheFly = false; //not supported
                         break;
                     case System.Drawing.Imaging.PixelFormat.Format32bppRgb: // has alpha too? wtf?
                     case System.Drawing.Imaging.PixelFormat.Canonical:
                     case System.Drawing.Imaging.PixelFormat.Format32bppArgb: // works
-                        pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgba;
+                        if (compressOnTheFly)
+                        {
+                            switch(internalFormatForOnTheFlyCompression)
+                            {
+                                case OpenTK.Graphics.OpenGL.PixelInternalFormat.CompressedRgbaS3tcDxt1Ext:
+                                case OpenTK.Graphics.OpenGL.PixelInternalFormat.CompressedRgbaS3tcDxt3Ext:
+                                case OpenTK.Graphics.OpenGL.PixelInternalFormat.CompressedRgbaS3tcDxt5Ext:
+                                case OpenTK.Graphics.OpenGL.PixelInternalFormat.CompressedRgba:
+                                    pif = internalFormatForOnTheFlyCompression;
+                                    break;
+
+                                default:
+                                    //Unsupported internalFormatForOnTheFlyCompression
+                                    compressOnTheFly = false;
+                                    pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgba;
+                                    break;
+                            }
+                        } else
+                        {
+                            pif = OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgba;
+                        }  
                         pf = OpenTK.Graphics.OpenGL.PixelFormat.Bgra;
                         pt = OpenTK.Graphics.OpenGL.PixelType.UnsignedByte;
                         break;
@@ -107,6 +131,28 @@ namespace glomp
                 if (Data.Height > 1)
                 { // image is 2D
                     GL.TexImage2D(dimension, 0, pif, Data.Width, Data.Height, TextureLoaderParameters.Border, pf, pt, Data.Scan0);
+
+                    if (compressOnTheFly)
+                    {
+                        //Checking if the compression on the fly was successful
+                        int compressed, internalformat, compressed_size;
+                        GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureCompressed, out compressed);
+                        /* if the compression has been successful */
+                        if (compressed == 1) //GL_TRUE
+                        {
+                            //GL.GetTexLevelParameter(dimension, 0, GetTextureParameter.TextureInternalFormat, out internalformat);
+                            //GL.GetTexLevelParameter(dimension, 0, GetTextureParameter.TextureCompressedImageSize, out compressed_size);
+                            //img = (unsigned char*)malloc(compressed_size * sizeof(unsigned char));
+                            //GL.GetCompressedTexImage(TextureTarget.Texture2D, 0, img);
+                            //SaveTexture(width, height, compressed_size, img, internalFormat, 0);
+                        }
+                        else
+                        {
+                            //Compression on the fly unsuccessful - use standard texture internal format
+                            //TODO: Handle that case.
+                            throw new ArgumentException("ERROR: Compression was unsuccessful!");
+                        }
+                    }
                 }
                 else
                 { // image is 1D

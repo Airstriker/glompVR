@@ -339,7 +339,8 @@ namespace glomp {
 			TextureLoaderParameters.MinificationFilter = TextureMinFilter.Linear;
 			TextureLoaderParameters.WrapModeS = TextureWrapMode.Clamp;
 			TextureLoaderParameters.WrapModeT = TextureWrapMode.Clamp;
-			ImageGDI.LoadFromDisk(textLabelBmp, out labelTextureIndex, out textureTarget);
+            //Load Texture and compress it on the fly to CompressedRgbaS3tcDxt1Ext format (no alpha channel is needed).
+            ImageGDI.LoadFromDisk(textLabelBmp, out labelTextureIndex, out textureTarget, true, OpenTK.Graphics.OpenGL.PixelInternalFormat.CompressedRgbaS3tcDxt1Ext);
 			System.Diagnostics.Debug.WriteLine("Loaded texture for label with handle " + labelTextureIndex + " as " + textureTarget);
 			textLabelBmp.Dispose();
 			textLabelBmp = null;

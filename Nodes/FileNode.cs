@@ -75,7 +75,8 @@ namespace glomp
                 TextureLoaderParameters.MinificationFilter = TextureMinFilter.LinearMipmapLinear;
                 TextureLoaderParameters.WrapModeS = TextureWrapMode.Clamp;
                 TextureLoaderParameters.WrapModeT = TextureWrapMode.Clamp;
-                ImageGDI.LoadFromDisk(thumbBmp, out thumbTextureIndex, out textureTarget);
+                //Load Thumbnail Texture and compress it on the fly to CompressedRgbaS3tcDxt1Ext format (no alpha channel is needed).
+                ImageGDI.LoadFromDisk(thumbBmp, out thumbTextureIndex, out textureTarget, true, OpenTK.Graphics.OpenGL.PixelInternalFormat.CompressedSrgbAlphaS3tcDxt1Ext);
                 System.Diagnostics.Debug.WriteLine("Loaded texture for thumbnail " + ThumbFileName + " with handle " + thumbTextureIndex + " as " + textureTarget);
                 thumbBmp.Dispose(); //this image is no longer needed as long as we have texture
                 thumbBmp = null;
@@ -113,11 +114,13 @@ namespace glomp
 					}
 				}
 
-				// set texture content
-				GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image);
+                // set texture content
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image);
+                //It's a 1x1 pixel texture, so there is no point in it's compression
+                //GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.CompressedSrgbAlphaS3tcDxt5Ext, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image);
 
-				// set texture parameters
-				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                // set texture parameters
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
 				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
