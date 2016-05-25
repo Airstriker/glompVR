@@ -4,19 +4,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenTK.Graphics.OpenGL4;
+using OculusWrap;
+using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace glomp
 {
-    public class DepthBuffer
+    public class DepthBuffer : IDisposable
     {
         private uint texId;
 
         int width, height;
 
-        public DepthBuffer(int w, int h)
+        public DepthBuffer(OVRTypes.Sizei size, int sampleCount)
         {
-            width = w;
-            height = h;
+            Debug.Assert(sampleCount <= 1); // The code doesn't currently handle MSAA textures.
+
+            width = size.Width;
+            height = size.Height;
 
             GL.GenTextures(1, out texId);
             GL.BindTexture(TextureTarget.Texture2D, texId);
@@ -27,8 +32,8 @@ namespace glomp
 
             var extensions = GL.GetString(StringName.Extensions).Split(' ');
 
-            PixelInternalFormat internalFormat = PixelInternalFormat.DepthComponent;
-            PixelType type = PixelType.Float;
+            PixelInternalFormat internalFormat = PixelInternalFormat.DepthComponent24;
+            PixelType type = PixelType.UnsignedInt;
 
             if (extensions.Contains("GL_ARB_depth_buffer_float"))
             {
@@ -36,9 +41,7 @@ namespace glomp
                 type = PixelType.Float;
             }
 
-            GL.TexImage2D(TextureTarget.Texture2D, 0, internalFormat, width, height, 0, PixelFormat.DepthComponent, type, IntPtr.Zero);
-
-            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, internalFormat, size.Width, size.Height, 0, PixelFormat.DepthComponent, type, IntPtr.Zero);
         }
 
         public uint TexId
@@ -59,12 +62,19 @@ namespace glomp
         }
 
 
-
-        public void CleanUp()
+        #region IDisposable Members
+        /// <summary>
+        /// Dispose contained fields.
+        /// </summary>
+        public void Dispose()
         {
-            if ( texId != 0)
+            if (texId != 0)
+            {
                 GL.DeleteTextures(1, ref texId);
+                texId = 0;
+            }
         }
+        #endregion
 
     }
 }

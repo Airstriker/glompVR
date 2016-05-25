@@ -19,7 +19,6 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using OpenTK.Platform;
 using OculusWrap;
-using OculusWrap.GL;
 using System.Windows.Forms;
 
 
@@ -108,11 +107,11 @@ public partial class MainWindow : GameWindow
     Wrap wrap = new Wrap();
     Hmd hmd;
 
-    // Shared textures (rendertargets)
-    OvrSharedRendertarget[] eyeRenderTexture = new OvrSharedRendertarget[2];
-    DepthBuffer[] eyeDepthBuffer = new DepthBuffer[2];
+    long frameIndex = 0;
 
-    OculusWrap.OVR.EyeRenderDesc[] EyeRenderDesc = new OVR.EyeRenderDesc[2];
+    // Shared textures (rendertargets)
+    TextureBuffer[] eyeRenderTexture = new TextureBuffer[2];
+    DepthBuffer[] eyeDepthBuffer = new DepthBuffer[2];
 
     int mirrorFbo = 0;
 
@@ -121,9 +120,9 @@ public partial class MainWindow : GameWindow
     Vector3 playerPos = new Vector3(0, 0, 0);
 
     Layers layers = new Layers();
-    LayerEyeFov layerFov;
+    LayerEyeFov layerFov = null;
 
-    OculusWrap.GL.MirrorTexture mirrorTex;
+    MirrorTexture mirrorTexture = null;
 
     bool isOculusInitialized = false;
     bool isOculusRenderingVisible = true;
@@ -152,9 +151,8 @@ public partial class MainWindow : GameWindow
 
     /* Constructor */
     public MainWindow()
-        : base(1024, 600, new OpenTK.Graphics.GraphicsMode(32, 24, 8, 8), "GlompVR") //MSAA (MultiSample AntiAliasing enabled - 8 samples
+        : base(1024, 600, new OpenTK.Graphics.GraphicsMode(32, 24, 8, 8), "GlompVR"/*, GameWindowFlags.Fullscreen*/) //MSAA (MultiSample AntiAliasing enabled - 8 samples
     {
-
         // Set the current process to run at 'High' Priority
         System.Diagnostics.Process process = System.Diagnostics.Process.GetCurrentProcess();
         process.PriorityClass = System.Diagnostics.ProcessPriorityClass.RealTime;
@@ -260,8 +258,12 @@ public partial class MainWindow : GameWindow
 
     private bool InitOculus()
     {
+        // Define initialization parameters with debug flag.
+        OVRTypes.InitParams initializationParameters = new OVRTypes.InitParams();
+        initializationParameters.Flags = OVRTypes.InitFlags.Debug; //TODO: What does it do?
+
         // Initialize the Oculus runtime.
-        bool success = wrap.Initialize();
+        bool success = wrap.Initialize(initializationParameters);
         if (!success)
         {
             //MessageBox.Show("Failed to initialize the Oculus runtime library.", "Uh oh", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -270,7 +272,7 @@ public partial class MainWindow : GameWindow
         }
 
         // Use the head mounted display.
-        OVR.GraphicsLuid graphicsLuid;
+        OVRTypes.GraphicsLuid graphicsLuid;
         hmd = wrap.Hmd_Create(out graphicsLuid);
         if (hmd == null)
         {
@@ -288,41 +290,72 @@ public partial class MainWindow : GameWindow
 
         System.Diagnostics.Debug.WriteLine("Oculus SDK Version: " + wrap.GetVersionString());
 
-        for (int i = 0; i < 2; i++)
+        try
         {
-            OVR.Sizei idealTextureSize = hmd.GetFovTextureSize((OVR.EyeType)i, hmd.DefaultEyeFov[i], 1);
-            eyeRenderTexture[i] = new OvrSharedRendertarget(idealTextureSize.Width, idealTextureSize.Height, hmd);
-            eyeDepthBuffer[i] = new DepthBuffer(eyeRenderTexture[i].Width, eyeRenderTexture[i].Height);
+            for (int i = 0; i < 2; i++)
+            {
+                OVRTypes.Sizei idealTextureSize = hmd.GetFovTextureSize((OVRTypes.EyeType)i, hmd.DefaultEyeFov[i], 1);
+                eyeRenderTexture[i] = new TextureBuffer(wrap, hmd, true, true, idealTextureSize, 1, IntPtr.Zero, 1);
+                eyeDepthBuffer[i] = new DepthBuffer(eyeRenderTexture[i].GetSize(), 0);
+            }
+
+            //Changing camera's start position and camera's offset, as in Oculus we're dealing with different FOV (different projection matrix).
+            camStartPosition = new Vector3(3.0f, 5.0f, -2.0f);
+            CAM_OFFSET = new Vector3(3.0f, -6.0f, 12.0f);
+
+            //For image displayed at ordinary monitor - copy of Oculus rendered one.
+            OVRTypes.MirrorTextureDesc mirrorTextureDescription = new OVRTypes.MirrorTextureDesc();
+            mirrorTextureDescription.Format = OVRTypes.TextureFormat.R8G8B8A8_UNORM_SRGB;
+            mirrorTextureDescription.Width = this.Width;
+            mirrorTextureDescription.Height = this.Height;
+            mirrorTextureDescription.MiscFlags = OVRTypes.TextureMiscFlags.None; //Generate Mips?
+
+            // Create the texture used to display the rendered result on the computer monitor.
+            OVRTypes.Result result;
+            result = hmd.CreateMirrorTextureGL(mirrorTextureDescription, out mirrorTexture);
+            WriteErrorDetails(wrap, result, "Failed to create mirror texture.");
+
+            layerFov = layers.AddLayerEyeFov();
+            layerFov.Header.Flags = OVRTypes.LayerFlags.HighQuality | OVRTypes.LayerFlags.TextureOriginAtBottomLeft; // OpenGL Texture coordinates start from bottom left
+            layerFov.Header.Type = OVRTypes.LayerType.EyeFov;
+
+            // Configure the mirror read buffer
+            uint texId;
+            result = mirrorTexture.GetBufferGL(out texId);
+            WriteErrorDetails(wrap, result, "Failed to retrieve the texture from the created mirror texture buffer.");
+
+            //Rendertarget for mirror desktop window
+            GL.GenFramebuffers(1, out mirrorFbo);
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
+            GL.FramebufferTexture2D(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, texId, 0);
+            GL.FramebufferRenderbuffer(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+
+            // FloorLevel will give tracking poses where the floor height is 0
+            result = hmd.SetTrackingOriginType(OVRTypes.TrackingOrigin.FloorLevel);
+            WriteErrorDetails(wrap, result, "Failed to set tracking origin type.");
         }
+        catch
+        {
+            // Release all resources
+            Dispose(layers);
+            if (mirrorFbo != 0) GL.DeleteFramebuffers(1, ref mirrorFbo);
+            Dispose(mirrorTexture);
+            for (int eyeIndex = 0; eyeIndex < 2; ++eyeIndex)
+            {
+                Dispose(eyeRenderTexture[eyeIndex]);
+                Dispose(eyeDepthBuffer[eyeIndex]);
+            }
 
-        //Changing camera's start position and camera's offset, as in Oculus we're dealing with different FOV (different projection matrix).
-        camStartPosition = new Vector3(1.0f, 5.0f, -2.0f);
-        CAM_OFFSET = new Vector3(5.0f, -7.0f, 12.0f);
+            // Disposing the device, before the hmd, will cause the hmd to fail when disposing.
+            // Disposing the device, after the hmd, will cause the dispose of the device to fail.
+            // It looks as if the hmd steals ownership of the device and destroys it, when it's shutting down.
+            // device.Dispose();
+            Dispose(hmd);
+            Dispose(wrap);
 
-        hmd.CreateMirrorTextureGL((uint)All.Srgb8Alpha8, this.Width, this.Height, out mirrorTex);
-
-        layerFov = layers.AddLayerEyeFov();
-        layerFov.Header.Flags = OVR.LayerFlags.HighQuality | OVR.LayerFlags.TextureOriginAtBottomLeft; // OpenGL Texture coordinates start from bottom left
-        layerFov.Header.Type = OVR.LayerType.EyeFov;
-
-        //Rendertarget for mirror desktop window
-        GL.GenFramebuffers(1, out mirrorFbo);
-        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
-        GL.FramebufferTexture2D(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, mirrorTex.Texture.TexId, 0);
-        GL.FramebufferRenderbuffer(FramebufferTarget.ReadFramebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, 0);
-        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
-
-        EyeRenderDesc[0] = hmd.GetRenderDesc(OVR.EyeType.Left, hmd.DefaultEyeFov[0]);
-        EyeRenderDesc[1] = hmd.GetRenderDesc(OVR.EyeType.Right, hmd.DefaultEyeFov[1]);
-
-        // Specify which head tracking capabilities to enable.
-        hmd.SetEnabledCaps(OVR.HmdCaps.DebugDevice);
-
-        // Start the sensor
-        //Update SDK 0.8: Usage of ovr_ConfigureTracking is no longer needed unless you want to disable tracking features. By default, ovr_Create enables the full tracking capabilities supported by any given device.
-        //hmd.ConfigureTracking(OVR.TrackingCaps.ovrTrackingCap_Orientation | OVR.TrackingCaps.ovrTrackingCap_MagYawCorrection | OVR.TrackingCaps.ovrTrackingCap_Position, OVR.TrackingCaps.None);
-
-        hmd.RecenterPose();
+            return false;
+        }
 
         return true;
     }
@@ -344,139 +377,159 @@ public partial class MainWindow : GameWindow
         {
             //Oculus rendering
 
+            // Call ovr_GetRenderDesc each frame to get the ovrEyeRenderDesc, as the returned values (e.g. HmdToEyeOffset) may change at runtime.
+            OVRTypes.EyeRenderDesc[] eyeRenderDesc = new OVRTypes.EyeRenderDesc[2];
+            eyeRenderDesc[0] = hmd.GetRenderDesc(OVRTypes.EyeType.Left, hmd.DefaultEyeFov[0]);
+            eyeRenderDesc[1] = hmd.GetRenderDesc(OVRTypes.EyeType.Right, hmd.DefaultEyeFov[1]);
+
             // Get eye poses, feeding in correct IPD offset
-            OVR.Vector3f[] ViewOffset = new OVR.Vector3f[]
-            {
-                EyeRenderDesc[0].HmdToEyeViewOffset,
-                EyeRenderDesc[1].HmdToEyeViewOffset
-            };
+            OVRTypes.Posef[] EyeRenderPose = new OVRTypes.Posef[2];
+            OVRTypes.Vector3f[] HmdToEyeOffset = { eyeRenderDesc[0].HmdToEyeOffset, eyeRenderDesc[1].HmdToEyeOffset };
 
-            double ftiming = hmd.GetPredictedDisplayTime(0);
             // Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
-            double sensorSampleTime = wrap.GetTimeInSeconds();
-            OVR.TrackingState hmdState = hmd.GetTrackingState(ftiming);
-            OVR.Posef[] eyePoses = new OVR.Posef[2];
+            double sensorSampleTime;    // sensorSampleTime is fed into the layer later
+            hmd.GetEyePoses(frameIndex, true, HmdToEyeOffset, ref EyeRenderPose, out sensorSampleTime);
 
-            wrap.CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, ref eyePoses);
 
-            if (isOculusRenderingVisible)
+            //double displayMidpoint = hmd.GetPredictedDisplayTime(0);
+            //OVRTypes.TrackingState trackingState = hmd.GetTrackingState(displayMidpoint, true);
+
+            try
             {
-                for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++)
+                if (isOculusRenderingVisible)
                 {
-                    layerFov.RenderPose[eyeIndex] = eyePoses[eyeIndex];
-
-                    // Increment to use next texture, just before writing
-                    eyeRenderTexture[eyeIndex].TextureSet.CurrentIndex = (eyeRenderTexture[eyeIndex].TextureSet.CurrentIndex + 1) % eyeRenderTexture[eyeIndex].TextureSet.TextureCount;
-
-                    GL.Viewport(0, 0, eyeRenderTexture[eyeIndex].Width, eyeRenderTexture[eyeIndex].Height);
-
-                    // Set and Clear Rendertarget
-                    eyeRenderTexture[eyeIndex].Bind(eyeDepthBuffer[eyeIndex].TexId);
-
-                    //ShadersCommonProperties.viewMatrix = Matrix4.LookAt(cam.Eye, cam.Target, cam.Up);
-                    //cam.FieldOfView = (float)Math.PI / 8; //In radians
-                    //hmd.DefaultEyeFov[eyeIndex]
-
-                    // Setup Viewmatrix
-                    Quaternion rotationQuaternion = layerFov.RenderPose[eyeIndex].Orientation.ToTK();
-                    Matrix4 rotationMatrix = Matrix4.CreateFromQuaternion(rotationQuaternion);
-
-                    // I M P O R T A N T !!!! Play with this scaleMatrix to tweek HMD's Pitch, Yaw and Roll behavior. It depends on your coordinate system.
-                    //Convert to X=right, Y=up, Z=in
-                    //S = [1, 1, -1];
-                    //viewMat = viewMat * S * R * S;
-
-                    Matrix4 scaleMatrix = Matrix4.CreateScale(-1f, 1f, -1f);
-                    rotationMatrix = scaleMatrix * rotationMatrix * scaleMatrix;
-
-                    Vector3 lookUp = Vector3.Transform(Vector3.UnitY, rotationMatrix);
-                    Vector3 lookAt = Vector3.Transform(Vector3.UnitZ, rotationMatrix);
-
-                    Vector3 viewPosition = playerPos;
-                    
-                    //NOTE! If head tracking is reversed at any axis - change minus to plus.
-                    viewPosition.X -= layerFov.RenderPose[eyeIndex].Position.ToTK().X;
-                    viewPosition.Y += layerFov.RenderPose[eyeIndex].Position.ToTK().Y;
-                    viewPosition.Z -= layerFov.RenderPose[eyeIndex].Position.ToTK().Z;
-
-                    ShadersCommonProperties.viewMatrix = Matrix4.LookAt(viewPosition, viewPosition + lookAt, lookUp);
-                    ShadersCommonProperties.projectionMatrix = OVR.ovrMatrix4f_Projection(hmd.DefaultEyeFov[eyeIndex], 0.1f, 500.0f, OVR.ProjectionModifier.RightHanded).ToTK();
-                    ShadersCommonProperties.projectionMatrix.Transpose();
-
-                    UpdateScene();
-
-                    GL.Clear(ClearBufferMask.DepthBufferBit);
-
-                    // Drawing SkyBox - it must be drawn first due to texture blending with nodes' textures.
-                    skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
-
-                    // apply camera transform
-                    cam.Transform(); //model matrix is modified
-
-                    // render the nodes, just render a slice for now, it renders in order 
-                    foreach (SliceManager node in sceneList)
+                    for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++)
                     {
-                        node.Render();
-                        this.culledThisFrame = node.culledTotal;
+                        // Switch to eye render target
+                        eyeRenderTexture[eyeIndex].SetAndClearRenderSurface(eyeDepthBuffer[eyeIndex]);
+
+                        // Setup Viewmatrix
+                        Quaternion rotationQuaternion = EyeRenderPose[eyeIndex].Orientation.ToTK();
+                        Matrix4 rotationMatrix = Matrix4.CreateFromQuaternion(rotationQuaternion);
+
+                        // I M P O R T A N T !!!! Play with this scaleMatrix to tweek HMD's Pitch, Yaw and Roll behavior. It depends on your coordinate system.
+                        //Convert to X=right, Y=up, Z=in
+                        //S = [1, 1, -1];
+                        //viewMat = viewMat * S * R * S;
+
+                        Matrix4 scaleMatrix = Matrix4.CreateScale(-1f, 1f, -1f);
+                        rotationMatrix = scaleMatrix * rotationMatrix * scaleMatrix;
+
+                        Vector3 lookUp = Vector3.Transform(Vector3.UnitY, rotationMatrix);
+                        Vector3 lookAt = Vector3.Transform(Vector3.UnitZ, rotationMatrix);
+
+                        Vector3 viewPosition = playerPos;
+
+                        //NOTE! If head tracking is reversed at any axis - change minus to plus.
+                        viewPosition.X -= EyeRenderPose[eyeIndex].Position.ToTK().X;
+                        viewPosition.Y += EyeRenderPose[eyeIndex].Position.ToTK().Y;
+                        viewPosition.Z -= EyeRenderPose[eyeIndex].Position.ToTK().Z;
+
+                        ShadersCommonProperties.viewMatrix = Matrix4.LookAt(viewPosition, viewPosition + lookAt, lookUp);
+                        ShadersCommonProperties.projectionMatrix = wrap.Matrix4f_Projection(hmd.DefaultEyeFov[eyeIndex], 0.1f, 1000.0f, OVRTypes.ProjectionModifier.None).ToTK();
+                        ShadersCommonProperties.projectionMatrix.Transpose();
+
+                        UpdateScene();
+
+                        GL.Clear(ClearBufferMask.DepthBufferBit);
+
+                        // Drawing SkyBox - it must be drawn first due to texture blending with nodes' textures.
+                        skyBox.DrawSkyBox(frameDelta); //Passing frameDelta for fps dependent animations
+
+                        // apply camera transform
+                        cam.Transform(); //model matrix is modified
+
+                        // render the nodes, just render a slice for now, it renders in order 
+                        foreach (SliceManager node in sceneList)
+                        {
+                            node.Render();
+                            this.culledThisFrame = node.culledTotal;
+                        }
+
+                        // Avoids an error when calling SetAndClearRenderSurface during next iteration.
+                        // Without this, during the next while loop iteration SetAndClearRenderSurface
+                        // would bind a framebuffer with an invalid COLOR_ATTACHMENT0 because the texture ID
+                        // associated with COLOR_ATTACHMENT0 had been unlocked by calling wglDXUnlockObjectsNV.
+                        eyeRenderTexture[eyeIndex].UnsetRenderSurface();
+
+                        // Commit changes to the textures so they get picked up frame
+                        // Commits any pending changes to the TextureSwapChain, and advances its current index
+                        eyeRenderTexture[eyeIndex].Commit();
+
+                        frameDelta = (frameTimer.ElapsedTicks - currentTicks) / 10000000.0f;
+                        currentTicks = frameTimer.ElapsedTicks;
                     }
 
-                    // Unbind bound shared textures
-                    eyeRenderTexture[eyeIndex].UnBind();
-
-                    frameDelta = (frameTimer.ElapsedTicks - currentTicks) / 10000000.0f;
-                    currentTicks = frameTimer.ElapsedTicks;
+                    //We count frames only after two eye views are rendered
+                    if (frameTimer.ElapsedMilliseconds > 1000)
+                    {
+                        this.Title = "GLompVR by Airstriker. " + frameCounter + "fps. ActiveSlice Path: " + slices.ActiveSlice.Path + " Number of nodes on ActiveSlice: " + slices.ActiveSlice.NumFiles + ". Culled: " + culledThisFrame + " nodes.";
+                        frameCounter = 0;
+                        currentTicks = 0;
+                        frameTimer.Reset();
+                        frameTimer.Start();
+                    }
                 }
 
-                //We count frames only after two eye views are rendered
-                if (frameTimer.ElapsedMilliseconds > 1000)
+                // Do distortion rendering, Present and flush/sync
+
+                for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++)
                 {
-                    this.Title = "GLompVR by Airstriker. " + frameCounter + "fps. ActiveSlice Path: " + slices.ActiveSlice.Path + " Number of nodes on ActiveSlice: " + slices.ActiveSlice.NumFiles + ". Culled: " + culledThisFrame + " nodes.";
-                    frameCounter = 0;
-                    currentTicks = 0;
-                    frameTimer.Reset();
-                    frameTimer.Start();
+                    // Update layer
+                    layerFov.ColorTexture[eyeIndex] = eyeRenderTexture[eyeIndex].TextureChain.TextureSwapChainPtr;
+                    layerFov.Viewport[eyeIndex].Position = new OVRTypes.Vector2i(0, 0);
+                    layerFov.Viewport[eyeIndex].Size = eyeRenderTexture[eyeIndex].GetSize();
+                    layerFov.Fov[eyeIndex] = hmd.DefaultEyeFov[eyeIndex];
+                    layerFov.RenderPose[eyeIndex] = EyeRenderPose[eyeIndex];
+                    layerFov.SensorSampleTime = sensorSampleTime;
                 }
-            }
 
-            // Do distortion rendering, Present and flush/sync
-            OVR.ViewScaleDesc viewScale = new OVR.ViewScaleDesc()
+                OVRTypes.Result result = hmd.SubmitFrame(0, layers);
+                WriteErrorDetails(wrap, result, "Failed to submit the frame of the current layers.");
+
+                isOculusRenderingVisible = (result == OVRTypes.Result.Success);
+
+                OVRTypes.SessionStatus sessionStatus = new OVRTypes.SessionStatus();
+                hmd.GetSessionStatus(ref sessionStatus);
+                if (sessionStatus.ShouldQuit == 1)
+                    throw new Exception("SessionStatus.ShouldQuit"); //Check if ok to throw exception here
+                                                                     //if (sessionStatus.ShouldRecenter == 1)
+                                                                     //    hmd.RecenterTrackingOrigin();
+
+                // Copy mirror data from mirror texture provided by OVR to backbuffer of the desktop window.
+                GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
+                GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+                int w = this.Width;
+                int h = this.Height;
+
+                GL.BlitFramebuffer(
+                    0, h, w, 0,
+                    0, 0, w, h,
+                    ClearBufferMask.ColorBufferBit,
+                    BlitFramebufferFilter.Nearest);
+
+                GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+
+            }
+            catch
             {
-                HmdToEyeViewOffset = new OVR.Vector3f[]
+                // Release all resources
+                Dispose(layers);
+                if (mirrorFbo != 0) GL.DeleteFramebuffers(1, ref mirrorFbo);
+                Dispose(mirrorTexture);
+                for (int eyeIndex = 0; eyeIndex < 2; ++eyeIndex)
                 {
-                ViewOffset[0],
-                ViewOffset[1]
-                },
-                HmdSpaceToWorldScaleInMeters = 1.0f
-            };
+                    Dispose(eyeRenderTexture[eyeIndex]);
+                    Dispose(eyeDepthBuffer[eyeIndex]);
+                }
 
-            for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++)
-            {
-                // Update layer
-                layerFov.ColorTexture[eyeIndex] = eyeRenderTexture[eyeIndex].TextureSet.SwapTextureSetPtr;
-                layerFov.Viewport[eyeIndex].Position = new OVR.Vector2i(0, 0);
-                layerFov.Viewport[eyeIndex].Size = new OVR.Sizei(eyeRenderTexture[eyeIndex].Width, eyeRenderTexture[eyeIndex].Height);
-                layerFov.Fov[eyeIndex] = hmd.DefaultEyeFov[eyeIndex];
-                layerFov.RenderPose[eyeIndex] = eyePoses[eyeIndex];
-                layerFov.SensorSampleTime = sensorSampleTime;
+                // Disposing the device, before the hmd, will cause the hmd to fail when disposing.
+                // Disposing the device, after the hmd, will cause the dispose of the device to fail.
+                // It looks as if the hmd steals ownership of the device and destroys it, when it's shutting down.
+                // device.Dispose();
+                Dispose(hmd);
+                Dispose(wrap);
             }
-
-            OVR.ovrResult result = hmd.SubmitFrame(0, layers);
-
-            isOculusRenderingVisible = (result == OVR.ovrResult.Success);
-
-            // Copy mirror data from mirror texture provided by OVR to backbuffer of the desktop window.
-            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, mirrorFbo);
-            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
-            int w = mirrorTex.Texture.Header.TextureSize.Width;
-            int h = mirrorTex.Texture.Header.TextureSize.Height;
-
-            GL.BlitFramebuffer(
-                0, h, w, 0,
-                0, 0, w, h,
-                ClearBufferMask.ColorBufferBit,
-                BlitFramebufferFilter.Nearest);
-
-            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
         }
 
         else
@@ -501,6 +554,7 @@ public partial class MainWindow : GameWindow
 
         frameCounter++;
         SwapBuffers();
+        frameIndex++;
     }
 
 
@@ -739,15 +793,16 @@ public partial class MainWindow : GameWindow
     {
         // Release all resources
         // Deleting buffers, rendertargets, dispose...
-        if (eyeRenderTexture[0] != null) eyeRenderTexture[0].CleanUp();
-        if (eyeRenderTexture[1] != null) eyeRenderTexture[1].CleanUp();
-
+        Dispose(layers);
         if (mirrorFbo != 0) GL.DeleteFramebuffers(1, ref mirrorFbo);
-        Dispose(mirrorTex);
+        Dispose(mirrorTexture);
+        for (int eyeIndex = 0; eyeIndex < 2; ++eyeIndex)
+        {
+            Dispose(eyeRenderTexture[eyeIndex]);
+            Dispose(eyeDepthBuffer[eyeIndex]);
+        }
 
         NodeManager.DisposeVBOs(); //Delete Buffers and Arrays
-
-        Dispose(layers);
 
         // Disposing the device, before the hmd, will cause the hmd to fail when disposing.
         // Disposing the device, after the hmd, will cause the dispose of the device to fail.
@@ -1115,7 +1170,7 @@ public partial class MainWindow : GameWindow
                     await Task.Run(() => slices.AddChildSliceToFileNode(activeNode)); //Run asynchronously and await for the result (during awaiting do other stuff - like drawing)
                 }
 
-				if (activeNode.ChildSlice.NumFiles == 0) {
+				if (activeNode.ChildSlice.NumFiles == 0) { //TODO Exception here when going back by backspace and forth (Julian -> najechac na Downloads i backspace)
                     slices.ActiveSlice.LastActivatedNode = activeNode;
                     //glwidget1.HasFocus = true;
                     //statusbar6.Pop(0);
@@ -1496,4 +1551,28 @@ public partial class MainWindow : GameWindow
         RenameFile(detailEntryName.Text);
     }
     */
+
+    /// <summary>
+    /// Write out any error details received from the Oculus SDK, into the debug output window.
+    /// 
+    /// Please note that writing text to the debug output window is a slow operation and will affect performance,
+    /// if too many messages are written in a short timespan.
+    /// </summary>
+    /// <param name="oculus">OculusWrap object for which the error occurred.</param>
+    /// <param name="result">Error code to write in the debug text.</param>
+    /// <param name="message">Error message to include in the debug text.</param>
+    public static void WriteErrorDetails(Wrap oculus, OVRTypes.Result result, string message)
+    {
+        if (result >= OVRTypes.Result.Success)
+            return;
+
+        // Retrieve the error message from the last occurring error.
+        OVRTypes.ErrorInfo errorInformation = oculus.GetLastError();
+
+        string formattedMessage = string.Format("{0}. \nMessage: {1} (Error code={2})", message, errorInformation.ErrorString, errorInformation.Result);
+        System.Diagnostics.Debug.WriteLine(formattedMessage);
+        //MessageBox.Show(formattedMessage, message);
+
+        throw new Exception(formattedMessage);
+    }
 }

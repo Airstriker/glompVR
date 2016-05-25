@@ -82,17 +82,17 @@ namespace glomp
 		}
 
 
-        public static Quaternion ToTK(this OVR.Quaternionf quat)
+        public static Quaternion ToTK(this OVRTypes.Quaternionf quat)
         {
             return new Quaternion(quat.X, quat.Y, quat.Z, quat.W);
         }
 
-        public static Vector3 ToTK(this OVR.Vector3f vec)
+        public static Vector3 ToTK(this OVRTypes.Vector3f vec)
         {
             return new Vector3(vec.X, vec.Y, vec.Z);
         }
 
-        public static Matrix4 ToTK(this OVR.Matrix4f mat)
+        public static Matrix4 ToTK(this OVRTypes.Matrix4f mat)
         {
             Matrix4 tkMAt = new Matrix4(
                 new Vector4(mat.M11, mat.M12, mat.M13, mat.M14),
